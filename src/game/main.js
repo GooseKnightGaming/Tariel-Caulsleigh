@@ -462,6 +462,9 @@ app.on('update', (dt) => {
   const free = clearTo([tx, ty, tz], [cx, cy, cz], 0.22);
   cam.reach = free < (cam.reach === undefined ? 1 : cam.reach) ? free : Math.min(free, (cam.reach === undefined ? 1 : cam.reach) + dt * 1.5);
   cx = tx + (cx - tx) * cam.reach; cy = ty + (cy - ty) * cam.reach; cz = tz + (cz - tz) * cam.reach;
+  // squeezed right up to her (a small room, a corner): look from her eyes, and don't draw her head from inside
+  const close = mode === 'free' && cam.reach * cam.dist < 0.95;
+  if (tariel && tariel.body.enabled === close) tariel.body.enabled = !close;
   const floor = groundAt(cx, cz) + 0.45;
   if (cy < floor) cy = floor;
   if (mode !== 'free' && opening.from) {
