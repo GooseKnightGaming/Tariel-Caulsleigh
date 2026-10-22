@@ -5,6 +5,10 @@
 import * as W from '../world/world.js';
 import { Geo, vcMaterial } from './geo.js';
 import { rng } from '../world/noise.js';
+import { OPEN, doors } from '../world/solids.js';
+
+// the doors' entities, by building: swung open or shut (doors.js style: e.g. by E)
+export const DOORS = new Map();
 
 function loadKit(pc, app, url) {
   return new Promise((ok, no) => {
@@ -33,6 +37,13 @@ const STYLES = {
 const GLASS = { Window_Wide_Flat: 'Window_Wide_Flat1', Window_Thin_Round: 'Window_Thin_Round1', Window_Wide_Round: 'Window_Wide_Round1' };
 const SHUTTER = { Window_Wide_Flat: 'WindowShutters_Wide_Flat_Open', Window_Thin_Round: 'WindowShutters_Thin_Round_Open' };
 
+// turn a door towards where it wants to be (0 shut, 1 open)
+export function swing(d, dt) {
+  d.t += Math.max(-dt * 2.5, Math.min(dt * 2.5, d.want - d.t));
+  d.e.setEulerAngles(0, (d.b.yaw + d.rot - 1.75 * d.t) * 57.29578, 0);
+}
+export function updateDoors(dt) { for (const d of DOORS.values()) if (d.t !== d.want) swing(d, dt); }
+
 export async function buildVillage(pc, app) {
   const [village, props] = await Promise.all([loadKit(pc, app, 'assets/kit/Village.glb'), loadKit(pc, app, 'assets/kit/Props.glb')]);
   const tmplV = village.resource.instantiateRenderEntity({ castShadows: true, receiveShadows: true });
@@ -47,8 +58,10 @@ export async function buildVillage(pc, app) {
   // a piece, placed in a house's frame: local (lx, ly, lz), turned rot (radians) within the house
   const put = (name, b, lx, ly, lz, rot) => {
     const src = pieces.get(name);
+    put.last = null;
     if (!src) { missing.add(name); return; }
     const e = src.clone();
+    put.last = e;
     const [x, z] = W.toWorld(b, lx, lz);
     e.setPosition(x, b.y + ly, z);
     e.setEulerAngles(0, (b.yaw + (rot || 0)) * 57.29578, 0);
@@ -56,7 +69,8 @@ export async function buildVillage(pc, app) {
     root.addChild(e); count++;
   };
   const foundations = new Geo();
-  for (const b of W.buildings()) {
+  doors();
+  for (const [id, b] of W.buildings().entries()) {
     if (b.kind === 'well') continue;
     const st = STYLES[b.style] || STYLES.saes, r = rng(b.seed), pick = (list) => list[Math.floor(r() * list.length)];
     const Wd = b.w * 2, D = b.d * 2, H = b.storeys * W.STOREY;
@@ -82,7 +96,16 @@ export async function buildVillage(pc, app) {
           put(GLASS[kind], b, cell.lx, k * W.STOREY, cell.lz, cell.rot);
           if (st.shutters && SHUTTER[kind] && r() < 0.6) put(SHUTTER[kind], b, cell.lx, k * W.STOREY, cell.lz, cell.rot);
         }
-        if (k === 0 && cell.door) put('Door_1_Flat', b, cell.lx - 0.53, 0, cell.lz - 0.12, cell.rot - 1.75);   // open, swung in
+        if (k === 0 && cell.door) {
+          // the door: hinged on its left; shut in the wall, or swung in
+          put('Door_1_Flat', b, cell.lx - 0.53, 0, cell.lz - 0.11, cell.rot);
+          const e = put.last;
+          if (e) {
+            for (const r of e.findComponents('render')) r.batchGroupId = -1;     // it moves, so it is not batched
+            const d = { e, b, rot: cell.rot, t: OPEN.has(id) ? 1 : 0, want: OPEN.has(id) ? 1 : 0 };
+            DOORS.set(id, d); swing(d, 0);
+          }
+        }
       }
       for (const [cx, cz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) put(st.corner, b, (cx * Wd) / 2, k * W.STOREY, (cz * D) / 2, 0);
     }
@@ -99,11 +122,9 @@ export async function buildVillage(pc, app) {
       foundations.at(px, W.heightAt(px, pz), pz, b.yaw);
       const red = b.style === 'saes';
       foundations.box(-0.12, 0, -0.12, 0.12, 1.2, 0.12, [0.30, 0.22, 0.15]);
-      // the pole, pointing up at 70 degrees: drawn as a slim box tipped back
-      for (let s = 0; s < 6; s++) {
-        const t0 = s / 6, len = 5.4 / 6, y = 1.15 + Math.sin(1.22) * len * (s + 0.5), along = Math.cos(1.22) * len * (s + 0.5);
-        foundations.box(along - 0.07, y - 0.45, -0.07, along + 0.07, y + 0.45, 0.07, s % 2 === 0 ? (red ? [0.72, 0.16, 0.12] : [0.12, 0.12, 0.12]) : [0.88, 0.86, 0.80]);
-      }
+      // the pole, swung open along the roadside on its post, its far end on a rest
+      for (let k = 0; k < 6; k++) foundations.box(0.12 + k * 0.9, 0.95, -0.07, 0.12 + (k + 1) * 0.9, 1.09, 0.07, k % 2 === 0 ? (red ? [0.72, 0.16, 0.12] : [0.12, 0.12, 0.12]) : [0.88, 0.86, 0.80]);
+      foundations.box(5.1, 0, -0.08, 5.26, 0.95, 0.08, [0.30, 0.22, 0.15]);
     }
   }
   const fe = new pc.Entity('foundations');

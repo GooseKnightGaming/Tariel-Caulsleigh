@@ -33,7 +33,7 @@ const PEOPLE = {
     hair: ['Hair_Buzzed'], outfit: 'ranger_brown', hairTex: 'dark', eyes: 'eye_brown' },
   // Thiah Kirðotr: Tariel undercover - barefoot (the base body's own feet), posh rags, hair loose (her notes)
   Thiah: { sex: 'f', parts: ['Female_Peasant_Body', 'Female_Peasant_Legs', 'Female_Peasant_Arms'], bareFeet: true,
-    hair: ['Hair_Long'], outfit: 'peasant_light', hairTex: 'darkblonde', eyes: 'eye_green' },
+    hair: ['Hair_Long'], outfit: 'peasant_light', hairTex: 'darkblonde', eyes: 'eye_green', skinTex: 'skin_f_kern' },   // the Mark of Kern on her left foot
   Rider: { sex: 'm', parts: ['Male_Peasant_Body', 'Male_Peasant_Legs', 'Male_Peasant_Arms', 'Male_Peasant_Feet'],
     hair: ['Hair_SimpleParted'], outfit: 'peasant', hairTex: 'dark', eyes: 'eye_brown' },
 };
@@ -57,7 +57,7 @@ async function build(name, who) {
       for (let k = 1; k < 4; k++) if (w[k] > w[b]) b = k;
       dom.push(names[j[b]]);
     }
-    const keepBone = new Set(who.bareFeet ? ['Head', 'neck_01', 'foot_l', 'foot_r', 'ball_l', 'ball_r', 'ball_leaf_l', 'ball_leaf_r'] : ['Head', 'neck_01']), idx = I.getArray(), keep = [];
+    const keepBone = new Set(who.bareFeet ? ['Head', 'neck_01', 'calf_l', 'calf_r', 'foot_l', 'foot_r', 'ball_l', 'ball_r', 'ball_leaf_l', 'ball_leaf_r'] : ['Head', 'neck_01']), idx = I.getArray(), keep = [];
     for (let t = 0; t < idx.length; t += 3) if ([idx[t], idx[t + 1], idx[t + 2]].some((v) => keepBone.has(dom[v]))) keep.push(idx[t], idx[t + 1], idx[t + 2]);
     I.setArray(idx instanceof Uint16Array ? new Uint16Array(keep) : new Uint32Array(keep));
   }
@@ -91,7 +91,7 @@ async function build(name, who) {
   // 3. one UV set, no vertex colours; painted textures only (no normal or roughness maps: lighter to draw)
   for (const m of root.listMeshes()) for (const p of m.listPrimitives()) for (const s of ['TEXCOORD_1', 'TEXCOORD_2', 'COLOR_0', 'COLOR_1']) if (p.getAttribute(s)) p.setAttribute(s, null);
   const T = {
-    skin: png(doc, 'skin_' + who.sex), hands: png(doc, 'hands_' + who.sex), eyes: png(doc, who.eyes), outfit: png(doc, who.outfit),
+    skin: png(doc, who.skinTex || 'skin_' + who.sex), hands: png(doc, 'hands_' + who.sex), eyes: png(doc, who.eyes), outfit: png(doc, who.outfit),
     hair1: png(doc, 'hair1_' + who.hairTex), hair2: png(doc, 'hair2_' + who.hairTex),
   };
   for (const mat of root.listMaterials()) {

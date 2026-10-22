@@ -109,6 +109,33 @@ ok(!tooDeep(mid[0], mid[1]), 'the bridge can be walked');
   ok(onBridge && w.side() === 'Sźettereich', 'up onto the bridge and across');
 }
 
+// doors: shut keeps her out, open lets her in
+{
+  const S = await import('../src/world/solids.js');
+  const d = S.doors().find((x) => x.b.kind === 'house');
+  const b = d.b, [ox, oz] = W.toWorld(b, d.cell.lx, b.d + 3), h = Math.atan2(-(d.x - ox), -(d.z - oz));
+  let w = new Walker(ox, oz, 0);
+  for (let k = 0; k < 60 * 5; k++) w.step(1 / 60, { moveZ: 1 }, h);
+  ok(S.floorAt(w.pos[0], w.pos[2]) === null, 'a shut door keeps her out');
+  S.OPEN.add(d.id);
+  w = new Walker(ox, oz, 0);
+  for (let k = 0; k < 60 * 5; k++) w.step(1 / 60, { moveZ: 1 }, h);
+  ok(S.floorAt(w.pos[0], w.pos[2]) !== null, 'an open door lets her in');
+  S.OPEN.delete(d.id);
+  ok(S.OPEN.has(S.doors().find((x) => x.b.kind === 'tavern').id), "the tavern's door stands open");
+}
+// traits
+{
+  const CH = await import('../src/sim/character.js');
+  const c = CH.newCharacter();
+  ok(c.points === CH.START_POINTS, 'points to spend');
+  ok(CH.spend(c, 'agility', 1) && c.traits.agility === 2 && c.points === CH.START_POINTS - 1, 'a point spent');
+  ok(!CH.spend(c, 'wits', -1), 'not below 1');
+  ok(CH.effects(c).speed > 1, 'agility quickens her');
+  const back = CH.load(CH.save(c));
+  ok(back.traits.agility === 2 && back.points === c.points, 'traits are kept');
+}
+
 // the sky
 ok(near(sunDir(6)[1], 0, 0.02) && near(sunDir(18)[1], 0, 0.02), 'sunrise and sunset on the horizon');
 ok(sunDir(6)[0] > 0.9, 'the sun rises in the east');

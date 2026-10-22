@@ -57,3 +57,52 @@ save(Image.open(f'{outfits}/Peasant/T_Peasant_2_BaseColor.png'), 'peasant', 1024
 # Thiah's "posh rags": the first, lighter Peasant
 save(Image.open(f'{outfits}/Peasant/T_Peasant_BaseColor.png'), 'peasant_light', 1024)
 print('textures written to', out)
+
+# ── the Mark of Kern, on Thiah's left foot (Rhys's design, tools/art/mark_of_kern.png) ──
+# tools/foot_uv.mjs lists the left foot's vertices: position, normal, texture coordinate. The ones on the top
+# of the foot map (x, z) to (u, v) nearly linearly; that fit places the mark, ankle-ward end up, on the instep.
+import json, os
+foot = sys.argv[4] if len(sys.argv) > 4 else None
+if foot and os.path.exists(foot):
+    import numpy as np
+    pts = [v for v in json.load(open(foot)) if v['n'][1] > 0.55]
+    A = np.array([[v['p'][0], v['p'][2], 1] for v in pts]); U = np.array([v['uv'] for v in pts])
+    fit, res, *_ = np.linalg.lstsq(A, U, rcond=None)
+    M = np.array([[fit[0][0], fit[1][0]], [fit[0][1], fit[1][1]]]); off = np.array([fit[2][0], fit[2][1]])
+    Minv = np.linalg.inv(M)
+    xs = A[:, 0]; zs = A[:, 1]
+    cx, cz = xs.mean(), zs.min() + (zs.max() - zs.min()) * 0.42          # a little ankle-ward of the middle
+    H = (zs.max() - zs.min()) * 0.62; Wd = H * 359 / 540
+    glyph = Image.open(os.path.join(os.path.dirname(__file__), 'art', 'mark_of_kern.png')).convert('L')
+    skin = Image.open(f'{base}/T_Superhero_Female_Light_BaseColor.png').convert('RGB')
+    S = skin.width; px = skin.load(); gp = glyph.load()
+    # only inside the outline of the top of the foot on the texture
+    from PIL import ImageDraw
+    hull_mask = Image.new('L', (S, S), 0)
+    uv = U * S
+    # convex hull (monotone chain)
+    P = sorted(set(map(tuple, uv.round(1))))
+    def cross(o, a, b): return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+    lo, hi = [], []
+    for p in P:
+        while len(lo) >= 2 and cross(lo[-2], lo[-1], p) <= 0: lo.pop()
+        lo.append(p)
+    for p in reversed(P):
+        while len(hi) >= 2 and cross(hi[-2], hi[-1], p) <= 0: hi.pop()
+        hi.append(p)
+    ImageDraw.Draw(hull_mask).polygon(lo[:-1] + hi[:-1], fill=255)
+    hm = hull_mask.load()
+    u0, v0 = uv.min(0).astype(int); u1, v1 = uv.max(0).astype(int)
+    ink = (52, 40, 36)
+    for ty in range(max(0, v0 - 2), min(S, v1 + 3)):
+        for tx in range(max(0, u0 - 2), min(S, u1 + 3)):
+            if not hm[tx, ty]: continue
+            x, z = Minv @ (np.array([(tx + 0.5) / S, (ty + 0.5) / S]) - off)
+            gx = (x - (cx - Wd / 2)) / Wd; gz = (z - (cz - H / 2)) / H
+            if not (0 <= gx < 1 and 0 <= gz < 1): continue
+            a = gp[int(gx * glyph.width), int(gz * glyph.height)] / 255 * 0.82
+            if a <= 0: continue
+            r, g, b = px[tx, ty]
+            px[tx, ty] = (int(r + (ink[0] - r) * a), int(g + (ink[1] - g) * a), int(b + (ink[2] - b) * a))
+    save(skin, 'skin_f_kern', 2048)
+    print('the Mark of Kern painted: fit residual', res, 'mark', round(Wd * 100, 1), 'x', round(H * 100, 1), 'cm')

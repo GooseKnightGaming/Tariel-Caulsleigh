@@ -47,6 +47,7 @@ export class Walker {
     this.speed = 0;                 // across the ground, m/s (the animation reads it)
     this.gait = 'idle';
     this.events = [];
+    this.mods = { speed: 1, stamina: 1 };       // from her traits (character.js)
   }
   step(dt, input, heading) {
     const mx = input.moveX || 0, mz = input.moveZ || 0;
@@ -59,9 +60,9 @@ export class Walker {
       wx = (fx * mz + rx * mx) / Math.max(1, Math.hypot(mx, mz));
       wz = (fz * mz + rz * mx) / Math.max(1, Math.hypot(mx, mz));
     }
-    let target = len > 0.05 ? (input.sprint && this.stamina > 1 ? MOVE.sprint : input.walk ? MOVE.walk : MOVE.jog) * len : 0;
-    const sprinting = target > MOVE.jog + 0.1;
-    this.stamina = Math.max(0, Math.min(MOVE.stamina, this.stamina + (sprinting ? -MOVE.sprintDrain : MOVE.regen) * dt));
+    let target = len > 0.05 ? (input.sprint && this.stamina > 1 ? MOVE.sprint : input.walk ? MOVE.walk : MOVE.jog) * len * this.mods.speed : 0;
+    const sprinting = target > MOVE.jog * this.mods.speed + 0.1;
+    this.stamina = Math.max(0, Math.min(this.staminaMax, this.stamina + (sprinting ? -MOVE.sprintDrain : MOVE.regen) * dt));
     const acc = this.onGround ? MOVE.accel : MOVE.airAccel;
     const tvx = wx * target, tvz = wz * target;
     const k = Math.min(1, acc * dt / Math.max(0.001, Math.hypot(tvx - this.vel[0], tvz - this.vel[2])));
@@ -98,8 +99,10 @@ export class Walker {
       else this.pos[1] = g;
     }
     this.speed = Math.hypot(this.vel[0], this.vel[2]);
-    this.gait = !this.onGround ? 'air' : this.speed < 0.3 ? 'idle' : this.speed < MOVE.walk + 0.4 ? 'walk' : this.speed < MOVE.jog + 0.4 ? 'jog' : 'sprint';
+    const ks = this.mods.speed;
+    this.gait = !this.onGround ? 'air' : this.speed < 0.3 ? 'idle' : this.speed < MOVE.walk * ks + 0.4 ? 'walk' : this.speed < MOVE.jog * ks + 0.4 ? 'jog' : 'sprint';
   }
+  get staminaMax() { return MOVE.stamina * this.mods.stamina; }
   // which bank of the Yolo she is on
   side() { return riverCoords(this.pos[0], this.pos[2]).n >= 0 ? 'Sźettereich' : 'Cawel'; }
 }

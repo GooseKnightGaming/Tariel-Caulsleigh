@@ -150,6 +150,8 @@ notes already require.
    **T0.1.1** (built) — Rhys's first playtest: houses built from the Medieval Village kit, solid and enterable;
    the tavern furnished, its bed let by the night (sleep as Thiah, three nights = the Trenite); Tariel ⇄ Thiah
    (Q); a pause menu; the rider on horseback; the bridge walkable.
+   **T0.1.2** (built) — debug line; doors (E); traits (K) and gear & bag (I) in the pause menu; the Mark of Kern
+   (Rhys's design: the triple spiral in its arc, on the left foot); Thiah's legs; the rider astride.
 2. **T0.2** — Stanlech: the bridge, the river, the tavern, the market, houses; townsfolk on routines.
 3. **T0.3** — conversation; Elar; the Thiah / Tariel switch.
 4. **T0.4** — combat (fists, sword, bow); the bar fight.

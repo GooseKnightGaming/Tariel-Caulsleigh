@@ -24,7 +24,13 @@ and Thiah Kirðotr (barefoot, posh rags, hair loose). **Esc** pauses (controls, 
 the hill on horseback. Walls, the well and tree trunks are solid; the camera stays in front of walls; the
 bridge can be walked.
 
+**T0.1.2** — Rhys's second playtest: a debug line (**F3**); doors shut by default, **E** opens and closes them
+(the tavern's stands open); a Character page (**K**: traits to put points into - Strength, Agility, Endurance,
+Wits, Presence; a first draft) and a Gear & bag page (**I**); Thiah's lower legs, and the Mark of Kern on her left
+foot (Rhys's design, tools/art); the rider astride his horse; no invisible wall under the tavern's chandelier;
+the guard posts' barriers laid straight along the road.
+
 Controls: **WASD** move · **mouse** look · **wheel** zoom · **Shift** run · **C** walk/jog · **Space**
-jump · **Q** Tariel / Thiah · **E** use · **M** map · hold **T** to hurry time · **Esc** pause · **H** help. A gamepad works too.
+jump · **Q** Tariel / Thiah · **E** use · **I** gear · **K** character · **M** map · hold **T** to hurry time · **Esc** pause · **F3** debug line · **H** help. A gamepad works too.
 
 Building: `npm install`, `npm test`, `node build.mjs` (writes `index.html` and `game.js` here, from `src/`).

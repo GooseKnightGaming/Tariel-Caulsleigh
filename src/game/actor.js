@@ -75,7 +75,16 @@ export class Actor {
     if (this.mount) {
       // riding: where the horse goes, sitting
       this.pos = [this.mount.pos[0], this.mount.pos[1] + this.saddle, this.mount.pos[2]]; this.yaw = this.mount.yaw;
-      this.play('sit'); this.sync(); return;
+      this.play('sit'); this.sync();
+      // astride: the thighs turned out from the chair-sitting pose, either side of the horse
+      if (!this.legs) this.legs = [this.body.findByName('thigh_l'), this.body.findByName('thigh_r')];
+      const pc = this.pc, q = Actor.q || (Actor.q = new pc.Quat()), t = Actor.t || (Actor.t = new pc.Quat());
+      this.legs.forEach((bone, i) => {
+        if (!bone) return;
+        q.setFromEulerAngles(0, 0, i === 0 ? -38 : 38);
+        t.mul2(bone.getLocalRotation(), q); bone.setLocalRotation(t);
+      });
+      return;
     }
     if (this.path && this.path.length) {
       const [tx, tz] = this.path[0], dx = tx - this.pos[0], dz = tz - this.pos[2], d = Math.hypot(dx, dz);

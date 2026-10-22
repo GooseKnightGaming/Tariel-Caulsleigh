@@ -4,15 +4,16 @@
 import * as pc from 'playcanvas';
 import * as W from '../world/world.js';
 import { Walker, groundAt } from '../sim/walker.js';
-import { clearTo } from '../world/solids.js';
 import { Clock, skyAt } from '../sim/sky.js';
 import { buildGround, buildRiver, buildTrees, buildTowns, buildSky } from './scene.js';
 import { loadBody, Actor, HORSE } from './actor.js';
 import { CAST, SCRIPT, OBJECTIVE, LANG } from './opening.js';
 import { RegionMap } from './map.js';
-import { buildVillage } from './village.js';
+import { buildVillage, DOORS, updateDoors } from './village.js';
+import { OPEN, doors, blocked, clearTo } from '../world/solids.js';
+import * as CH from '../sim/character.js';
 
-const VERSION = 'T0.1.1';
+const VERSION = 'T0.1.2';
 const TEST = /[?&]test/.test(location.search);
 const $ = (id) => document.getElementById(id);
 
@@ -102,6 +103,7 @@ function setUpOpening() {
   const yaw = Math.atan2(-dx, -dz);
   const at = (f, r) => [top[0] + fx * f + rx * r, top[1] + fz * f + rz * r];
   walker = new Walker(...at(52, 0), yaw);
+  applyTraits();
   opening.from = at(46, 2.2); opening.look = [top[0] + dx * 0.6, top[1] + dz * 0.6];
   if (tariel) tariel.place(walker.pos[0], walker.pos[2], yaw);
   if (cast.caulsleigh) { cast.caulsleigh.place(...at(52.6, -1.6), yaw); cast.caulsleigh.pose = 'arms'; }
@@ -146,7 +148,7 @@ function riderComes() {
   if (!r) { next(); return; }
   r.visible = true; waiting = true;
   const mover = horse || r;
-  if (horse) { horse.visible = true; r.mount = horse; r.saddle = 0.62; }
+  if (horse) { horse.visible = true; r.mount = horse; r.saddle = 1.0; }
   // up the hill path from the road, then straight up to the three of them
   mover.go([W.fromRiver(-70, -325), opening.front], horse ? 7.5 : 4.6, () => {
     waiting = false; mover.pose = 'idle'; mover.face(cast.caulsleigh.pos[0], cast.caulsleigh.pos[2]);
@@ -224,6 +226,9 @@ window.addEventListener('keydown', (e) => {
   }
   if (paused) return;
   if (e.code === 'KeyQ' && mode === 'free') become(who === 'tariel' ? 'thiah' : 'tariel');
+  if ((e.code === 'KeyI' || e.code === 'Tab') && mode !== 'title') { e.preventDefault(); pause(true); drawGear(); $('pausepage').dataset.page = 'gear'; }
+  if (e.code === 'KeyK' && mode !== 'title') { pause(true); drawCharacter(); $('pausepage').dataset.page = 'character'; }
+  if (e.code === 'F3' || e.code === 'Backquote') { e.preventDefault(); SETTINGS.debug = !SETTINGS.debug; saveSettings(); applySettings(); }
   if (e.code === 'KeyE' && mode === 'free') act();
   if (e.code === 'KeyM' && mode !== 'title') toggleMap();
   if ((e.code === 'Enter' || e.code === 'KeyE' || e.code === 'Space') && mode === 'opening' && !waiting) { e.preventDefault(); next(); }
@@ -288,15 +293,37 @@ function bedSpot() {
   const [x, z] = W.toWorld(t, bed.lx, bed.lz);
   return { x, z, y: t.y };
 }
+let offerDoor = null;
 function nearby() {
   const b = bedSpot();
   const near = Math.hypot(walker.pos[0] - b.x, walker.pos[2] - b.z) < 2.3 && Math.abs(walker.pos[1] - b.y) < 1;
   offer = near ? 'sleep' : null;
+  // the nearest door within reach, either side of it
+  offerDoor = null;
+  if (!offer) {
+    let best = 1.9;
+    for (const d of doors()) {
+      const dist = Math.hypot(walker.pos[0] - d.x, walker.pos[2] - d.z);
+      if (dist < best && Math.abs(walker.pos[1] - d.y) < 1.2) { best = dist; offerDoor = d; }
+    }
+    if (offerDoor) offer = 'door';
+  }
   $('prompt').classList.toggle('gone', !offer || paused);
-  if (offer) $('prompt').innerHTML = '<kbd>E</kbd> Sleep until morning';
+  if (offer === 'sleep') $('prompt').innerHTML = '<kbd>E</kbd> Sleep until morning';
+  else if (offer === 'door') $('prompt').innerHTML = '<kbd>E</kbd> ' + (OPEN.has(offerDoor.id) ? 'Close' : 'Open') + ' the door' + (offerDoor.b.kind === 'tavern' ? ' (the tavern)' : '');
+}
+function useDoor(d) {
+  const open = !OPEN.has(d.id);
+  if (!open) {
+    // not shut on her: she must be clear of the doorway
+    OPEN.delete(d.id);
+    if (blocked(walker.pos[0], walker.pos[2], 0.3, walker.pos[1] + 0.3, walker.pos[1] + 1.7)) { OPEN.add(d.id); hint('Step out of the doorway first.', 2500); return; }
+  } else OPEN.add(d.id);
+  const v = DOORS.get(d.id); if (v) v.want = open ? 1 : 0;
 }
 const NIGHT = ['one', 'two', 'three'];
 function act() {
+  if (offer === 'door' && offerDoor) { useDoor(offerDoor); return; }
   if (offer !== 'sleep' || sleeping) return;
   if (who === 'tariel') { hint("Tariel Caulsleigh can't be seen taking a bed here. Become Thiah first (Q).", 5000); return; }
   const h = clock.hour;
@@ -321,15 +348,35 @@ function act() {
   }, 1300);
 }
 
+// ── her traits and her bag ────────────────────────────────────────────────
+let character = CH.newCharacter();
+try { character = CH.load(localStorage.getItem('tariel.character')); } catch (e) { /* a fresh one */ }
+function applyTraits() {
+  if (walker) walker.mods = CH.effects(character);
+  try { localStorage.setItem('tariel.character', CH.save(character)); } catch (e) { /* fine */ }
+}
+function drawCharacter() {
+  $('pts').textContent = character.points;
+  $('traits').innerHTML = CH.TRAITS.map((t) => `<div class="trait"><div><b>${t.name}</b> <span class="pips">${'●'.repeat(character.traits[t.id])}${'○'.repeat(CH.TRAIT_MAX - character.traits[t.id])}</span><div class="about">${t.about}</div></div>` +
+    `<div><button data-t="${t.id}" data-a="-1">−</button><button data-t="${t.id}" data-a="1">+</button></div></div>`).join('');
+  for (const b of $('traits').querySelectorAll('button')) b.onclick = () => { if (CH.spend(character, b.dataset.t, +b.dataset.a)) { applyTraits(); drawCharacter(); } };
+}
+function drawGear() {
+  const worn = character.worn[who];
+  $('gearwho').textContent = who === 'thiah' ? 'Thiah Kirðotr wears' : 'Tariel Caulsleigh wears';
+  $('slots').innerHTML = Object.entries(worn).map(([slot, item]) => `<tr><td>${slot}</td><td>${item || '<span class="empty">-</span>'}</td></tr>`).join('');
+  $('bag').innerHTML = character.bag.map((it) => `<tr><td>${it.name}${it.qty > 1 ? ' × ' + it.qty : ''}</td><td class="about">${it.about}</td></tr>`).join('');
+}
+
 // ── the pause menu (Esc) ──────────────────────────────────────────────────
-const SETTINGS = { sens: 1, invert: false, shadows: true, res: 'normal' };
+const SETTINGS = { sens: 1, invert: false, shadows: true, res: 'normal', debug: true };
 try { Object.assign(SETTINGS, JSON.parse(localStorage.getItem('tariel.settings') || '{}')); } catch (e) { /* none saved */ }
 function saveSettings() { try { localStorage.setItem('tariel.settings', JSON.stringify(SETTINGS)); } catch (e) { /* fine */ } }
 function applySettings() {
   light.light.castShadows = SETTINGS.shadows && !TEST;
   app.graphicsDevice.maxPixelRatio = TEST ? 0.5 : { low: 0.75, normal: Math.min(window.devicePixelRatio || 1, 1.25), high: Math.min(window.devicePixelRatio || 1, 2) }[SETTINGS.res] || 1;
   app.resizeCanvas();
-  $('set-sens').value = SETTINGS.sens; $('set-invert').checked = SETTINGS.invert; $('set-shadows').checked = SETTINGS.shadows; $('set-res').value = SETTINGS.res;
+  $('set-sens').value = SETTINGS.sens; $('set-invert').checked = SETTINGS.invert; $('set-shadows').checked = SETTINGS.shadows; $('set-res').value = SETTINGS.res; $('set-debug').checked = SETTINGS.debug;
 }
 let quietUnlock = false;     // pointer let go on purpose (the map), not a pause
 function pause(on) {
@@ -348,6 +395,9 @@ let pausedAt = 0;
 function pauseWiring() {
   $('p-resume').onclick = () => pause(false);
   $('p-controls').onclick = () => { $('pausepage').dataset.page = 'controls'; };
+  $('p-gear').onclick = () => { drawGear(); $('pausepage').dataset.page = 'gear'; };
+  $('p-character').onclick = () => { drawCharacter(); $('pausepage').dataset.page = 'character'; };
+  $('set-debug').onchange = (e) => { SETTINGS.debug = e.target.checked; saveSettings(); };
   $('p-settings').onclick = () => { $('pausepage').dataset.page = 'settings'; };
   for (const b of document.querySelectorAll('.p-back')) b.onclick = () => { $('pausepage').dataset.page = 'main'; };
   $('p-restart').onclick = () => location.reload();
@@ -355,6 +405,20 @@ function pauseWiring() {
   $('set-invert').onchange = (e) => { SETTINGS.invert = e.target.checked; saveSettings(); };
   $('set-shadows').onchange = (e) => { SETTINGS.shadows = e.target.checked; saveSettings(); applySettings(); };
   $('set-res').onchange = (e) => { SETTINGS.res = e.target.value; saveSettings(); applySettings(); };
+}
+
+// ── the debug line (F3 or the backquote key; also in Settings) ───────────────
+let dbgT = 0, dbgFrames = 0, dbgMs = 0;
+const dbgClock = { last: performance.now() };
+function debugLine(dt) {
+  const el = $('debug');
+  if (!SETTINGS.debug || mode === 'title') { el.classList.add('gone'); return; }
+  const now = performance.now(); dbgMs += now - dbgClock.last; dbgClock.last = now; dbgFrames++;
+  dbgT -= dt; if (dbgT > 0 && !paused) return; dbgT = 0.5;
+  const fps = dbgFrames / Math.max(0.001, dbgMs / 1000); dbgFrames = 0; dbgMs = 0;
+  const p = walker.pos, rc = W.riverCoords(p[0], p[2]), st = app.stats;
+  el.classList.remove('gone');
+  el.textContent = `${VERSION} | ${fps.toFixed(0)} fps | ${st.drawCalls ? st.drawCalls.total : '?'} draws | pos ${p[0].toFixed(1)}, ${p[1].toFixed(1)}, ${p[2].toFixed(1)} | river s ${rc.s.toFixed(0)} n ${rc.n.toFixed(0)} | ${walker.side()} | ${who} | ${walker.gait} ${walker.speed.toFixed(1)} m/s | stamina ${Math.round(walker.stamina)}/${Math.round(walker.staminaMax)} | day ${clock.day} ${clock.hour.toFixed(2)} h | nights ${nights} | ${mode}${paused ? ' (paused)' : ''}`;
 }
 
 // ── every frame ───────────────────────────────────────────────────────────
@@ -387,6 +451,8 @@ app.on('update', (dt) => {
   if (horse && horse.visible) horse.update(dt);
   for (const k in cast) if (cast[k].visible) cast[k].update(dt);
   if (mode === 'free') nearby();
+  updateDoors(dt);
+  debugLine(dt);
   // the camera, behind and above her; never under the ground
   cam.dist += (cam.want - cam.dist) * Math.min(1, dt * 6);
   const tx = walker.pos[0], ty = walker.pos[1] + 1.55, tz = walker.pos[2];
@@ -437,8 +503,8 @@ app.on('update', (dt) => {
     $('side').className = walker.side() === 'Cawel' ? 'cawel' : 'szetter';
     const t = clock.text();
     $('clock').textContent = t.part + ' of the ' + t.day + ' day · ' + t.time;
-    $('stamina').style.width = walker.stamina + '%';
-    $('staminabox').classList.toggle('gone', walker.stamina > 99.5);
+    $('stamina').style.width = (100 * walker.stamina / walker.staminaMax) + '%';
+    $('staminabox').classList.toggle('gone', walker.stamina > walker.staminaMax - 0.5);
     if (!arrived && mode === 'free' && place === 'Stanlech') {
       arrived = true;
       setObjective('Night one of the Trenite: find somewhere to sleep in Stanlech');

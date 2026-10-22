@@ -6,15 +6,30 @@ import { buildings, wallCells, trees, STOREY, PLACES, TAVERN_ROOM } from './worl
 
 const CELL = 16;
 let INDEX = null, FLOORS = null;
+// doors: closed unless opened; the tavern's stands open. Keyed by the building's index in buildings().
+export const OPEN = new Set();
+export function doors() {
+  if (doors.cache) return doors.cache;
+  doors.cache = [];
+  buildings().forEach((b, id) => {
+    if (b.kind === 'well') return;
+    const cell = wallCells(b).find((c) => c.door);
+    const c = Math.cos(b.yaw), s = Math.sin(b.yaw);
+    doors.cache.push({ id, b, cell, x: b.x + cell.lx * c + cell.lz * s, z: b.z - cell.lx * s + cell.lz * c, y: b.y });
+    if (b.kind === 'tavern') OPEN.add(id);
+  });
+  return doors.cache;
+}
 
 function addBox(list, b, lx, lz, hx, hz, y0, y1) {
   const c = Math.cos(b.yaw), s = Math.sin(b.yaw);
   list.push({ x: b.x + lx * c + lz * s, z: b.z - lx * s + lz * c, yaw: b.yaw, c, s, hx, hz, y0: b.y + y0, y1: b.y + y1 });
 }
 export function solidList() {
+  doors();
   const out = [];
-  for (const b of buildings()) {
-    if (b.kind === 'well') { out.push({ x: b.x, z: b.z, yaw: 0, c: 1, s: 0, hx: 1.15, hz: 1.15, y0: b.y - 1, y1: b.y + 2.7 }); continue; }
+  buildings().forEach((b, id) => {
+    if (b.kind === 'well') { out.push({ x: b.x, z: b.z, yaw: 0, c: 1, s: 0, hx: 1.15, hz: 1.15, y0: b.y - 1, y1: b.y + 2.7 }); return; }
     const H = b.storeys * STOREY, W = b.w * 2, D = b.d * 2, T = 0.22;
     for (const cell of wallCells(b)) {
       const along = cell.side === 'front' || cell.side === 'back';
@@ -22,6 +37,7 @@ export function solidList() {
         // the doorway: wall either side of a 1.1 m opening, and over it
         for (const k of [-1, 1]) addBox(out, b, cell.lx + k * 0.8, cell.lz, 0.2, T, -1, H);
         addBox(out, b, cell.lx, cell.lz, 1, T, 2.3, H);
+        addBox(out, b, cell.lx, cell.lz, 0.62, T, -1, 2.3); out[out.length - 1].door = id;     // the door itself, when shut
       } else if (along) addBox(out, b, cell.lx, cell.lz, 1, T, -1, H);
       else addBox(out, b, cell.lx, cell.lz, T, 1, -1, H);
     }
@@ -29,12 +45,10 @@ export function solidList() {
     addBox(out, b, 0, 0, W / 2, D / 2, STOREY - 0.15, H + 6);
     // the tavern's furniture
     if (b.kind === 'tavern') for (const f of TAVERN_ROOM) if (f.solid) {
-      const c = Math.cos(f.rot), s = Math.sin(f.rot);
-      // a turned piece: its half-sizes swap when it is turned a quarter
-      const q = Math.abs(s) > 0.7;
-      addBox(out, b, f.lx, f.lz, q ? f.solid[1] : f.solid[0], q ? f.solid[0] : f.solid[1], 0, f.solid[2]);
+      // (solid gives the half-sizes as the piece stands in the room, turned or not)
+      addBox(out, b, f.lx, f.lz, f.solid[0], f.solid[1], 0, f.solid[2]);
     }
-  }
+  });
   // tree trunks
   for (const t of trees()) out.push({ x: t.x, z: t.z, yaw: 0, c: 1, s: 0, hx: 0.3 * t.size, hz: 0.3 * t.size, y0: t.y - 1, y1: t.y + 4 });
   return out;
@@ -63,6 +77,7 @@ export function blocked(x, z, rad, y0, y1) {
   if (!list) return null;
   for (const sd of list) {
     if (y1 <= sd.y0 || y0 >= sd.y1) continue;
+    if (sd.door !== undefined && OPEN.has(sd.door)) continue;
     const dx = x - sd.x, dz = z - sd.z;
     const lx = dx * sd.c - dz * sd.s, lz = dx * sd.s + dz * sd.c;
     if (Math.abs(lx) < sd.hx + rad && Math.abs(lz) < sd.hz + rad) return sd;
