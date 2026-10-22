@@ -37,6 +37,7 @@
   #hint { position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%); background: var(--dark); padding: 6px 14px; font-size: 17px; max-width: 90vw; text-align: center; }
   #talk { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); width: min(760px, calc(100vw - 32px)); background: var(--dark); border-top: 2px solid var(--red); padding: 12px 18px 14px; box-sizing: border-box; }
   #talkname { font-weight: 700; color: #f7dca0; font-size: 19px; }
+  #talklang { font-style: italic; color: var(--dim); font-size: 16px; margin-left: 6px; }
   #talkline { font-size: 22px; line-height: 1.3; margin-top: 3px; }
   #talkmore { font-size: 14px; color: var(--dim); text-align: right; margin-top: 4px; }
   #banner { position: absolute; left: 0; right: 0; top: 22%; text-align: center; opacity: 0; text-shadow: 0 2px 12px #000; }
@@ -62,7 +63,7 @@
   <h2>Chapter One · The Trenite at Stanlech</h2>
   <button id="begin" disabled>Loading…</button>
   <button id="skip">Skip the opening</button>
-  <div class="small">An early build: the hill above Stanlech, the Yolo valley, day and night. The people are stand-in figures until the real ones are made.</div>
+  <div class="small">An early build: the hill above Stanlech, the Yolo valley, day and night. Tariel, her father, Síofel and the rider are dressed from the Quaternius packs; their colours are placeholders.</div>
   <div class="ver">Build <span id="ver"></span></div>
 </div>
 
@@ -72,7 +73,7 @@
   <div id="objective" class="gone"></div>
   <div id="staminabox" class="gone"><div id="stamina"></div></div>
   <div id="hint" class="gone"></div>
-  <div id="talk" class="gone"><div id="talkname"></div><div id="talkline"></div><div id="talkmore">click or Enter ▸</div></div>
+  <div id="talk" class="gone"><div><span id="talkname"></span> <span id="talklang"></span></div><div id="talkline"></div><div id="talkmore">click or Enter ▸</div></div>
   <div id="banner"><div id="bannerbig"></div><div id="bannersmall"></div></div>
 </div>
 

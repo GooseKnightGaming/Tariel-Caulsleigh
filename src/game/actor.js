@@ -1,16 +1,19 @@
-// TARIEL CAULSLEIGH - a person in the world: a body (the stand-in until Rhys's character models come back),
-// its clothes tinted, its clips by name, and walking to places along the ground.
+// TARIEL CAULSLEIGH - a person in the world: a body (built by tools/build_people.mjs from Rhys's Quaternius
+// packs), its clips by name, and walking to places along the ground.
 
 import { groundAt } from '../sim/walker.js';
 
-const URL = 'assets/characters/Standin.glb';
-let ASSET = null;
+const ASSETS = {};
 const FILLED = new Set();
-export function loadBody(pc, app) {
-  if (ASSET) return ASSET.loaded ? Promise.resolve(ASSET) : new Promise((ok, no) => { ASSET.once('load', ok); ASSET.once('error', no); });
-  ASSET = new pc.Asset('standin', 'container', { url: URL });
-  app.assets.add(ASSET);
-  return new Promise((ok, no) => { ASSET.once('load', () => ok(ASSET)); ASSET.once('error', no); app.assets.load(ASSET); });
+// a person's body: assets/characters/<name>.glb (the stand-in if theirs will not load)
+export function loadBody(pc, app, name) {
+  const url = 'assets/characters/' + (name || 'Standin') + '.glb';
+  let a = ASSETS[url];
+  if (a) return a.loaded ? Promise.resolve(a) : new Promise((ok, no) => { a.once('load', ok); a.once('error', no); });
+  a = ASSETS[url] = new pc.Asset(name || 'standin', 'container', { url });
+  app.assets.add(a);
+  return new Promise((ok, no) => { a.once('load', () => ok(a)); a.once('error', no); app.assets.load(a); })
+    .catch(() => (name ? loadBody(pc, app, null) : Promise.reject(new Error('no body'))));
 }
 
 // which clip for which gait
@@ -28,7 +31,7 @@ export class Actor {
     if (opts.tint) {
       const made = new Map();
       for (const rc of e.findComponents('render')) for (const mi of rc.meshInstances) {
-        if (!/Ranger/.test(mi.material.name || '')) continue;
+        if (!/Ranger|Outfit/.test(mi.material.name || '')) continue;
         let m = made.get(mi.material);
         if (!m) { m = mi.material.clone(); m.diffuse = new pc.Color(...opts.tint.map((v) => Math.min(1, v * 1.8))); m.update(); made.set(mi.material, m); }
         mi.material = m;
@@ -37,7 +40,7 @@ export class Actor {
     // a little fill light on people, so they never stand as black cut-outs against the sky
     for (const rc of e.findComponents('render')) for (const mi of rc.meshInstances) {
       if (FILLED.has(mi.material)) continue;
-      FILLED.add(mi.material); mi.material.ambient = new pc.Color(2.2, 2.2, 2.2); mi.material.update();
+      FILLED.add(mi.material); mi.material.ambient = new pc.Color(1.6, 1.6, 1.6); mi.material.update();
     }
     e.forEach((node) => { if (/^(pistol|gun|rifle|weapon)/i.test(node.name || '')) node.enabled = false; });
     // to a height

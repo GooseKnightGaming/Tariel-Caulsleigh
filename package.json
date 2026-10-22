@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "scripts": { "build": "node build.mjs", "test": "node test/run.mjs" },
-  "dependencies": { "esbuild": "^0.28.2", "playcanvas": "^2.22.2" }
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node test/run.mjs"
+  },
+  "dependencies": {
+    "esbuild": "^0.28.2",
+    "playcanvas": "^2.22.2"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1"
+  }
 }

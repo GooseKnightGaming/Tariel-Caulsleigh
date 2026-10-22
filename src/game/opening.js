@@ -3,10 +3,10 @@
 // The lines are drafts for Rhys to rewrite. A step is { who, line } or { do: fn-name }.
 
 export const CAST = {
-  tariel: { name: 'Tariel', tint: [0.36, 0.30, 0.24] },
-  caulsleigh: { name: 'Lord Caulsleigh', tint: [0.20, 0.24, 0.40] },
-  siofel: { name: 'First Sergeant Síofel', tint: [0.42, 0.18, 0.15] },
-  rider: { name: 'A rider', tint: [0.30, 0.32, 0.22] },
+  tariel: { name: 'Tariel', model: 'Tariel' },
+  caulsleigh: { name: 'Lord Caulsleigh', model: 'Caulsleigh' },
+  siofel: { name: 'First Sergeant Síofel', model: 'Siofel' },
+  rider: { name: 'A rider', model: 'Rider' },
 };
 
 export const SCRIPT = [
@@ -22,5 +22,8 @@ export const SCRIPT = [
   { who: 'siofel', line: 'Mind yourself down there, Thiah.' },
   { do: 'leave' },
 ];
+
+// the language spoken: Saes, the standard tongue of the Saeslands (the Compendium); shown as a label
+export const LANG = 'Saes';
 
 export const OBJECTIVE = 'Go down to Stanlech';

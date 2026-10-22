@@ -7,7 +7,7 @@ import { Walker, groundAt } from '../sim/walker.js';
 import { Clock, skyAt } from '../sim/sky.js';
 import { buildGround, buildRiver, buildTrees, buildTowns, buildSky } from './scene.js';
 import { loadBody, Actor } from './actor.js';
-import { CAST, SCRIPT, OBJECTIVE } from './opening.js';
+import { CAST, SCRIPT, OBJECTIVE, LANG } from './opening.js';
 import { RegionMap } from './map.js';
 
 const VERSION = 'T0.1';
@@ -64,11 +64,13 @@ async function makeWorld() {
   buildTowns(pc, app, W.buildings());
   sky = buildSky(pc, app);
   say('Waking the people…'); await frame();
-  const body = await loadBody(pc, app).catch(() => null);
-  if (body) {
-    tariel = new Actor(pc, app, body, { name: 'Tariel', tint: CAST.tariel.tint, height: 1.7 });
-    for (const k of ['caulsleigh', 'siofel', 'rider']) cast[k] = new Actor(pc, app, body, { name: CAST[k].name, tint: CAST[k].tint, height: k === 'caulsleigh' ? 1.82 : 1.76 });
-  }
+  const bodies = await Promise.all(['tariel', 'caulsleigh', 'siofel', 'rider'].map((k) => loadBody(pc, app, CAST[k].model).catch(() => null)));
+  const HEIGHT = { tariel: 1.70, caulsleigh: 1.84, siofel: 1.80, rider: 1.76 };
+  ['tariel', 'caulsleigh', 'siofel', 'rider'].forEach((k, i) => {
+    if (!bodies[i]) return;
+    const a = new Actor(pc, app, bodies[i], { name: CAST[k].name, height: HEIGHT[k] });
+    if (k === 'tariel') tariel = a; else cast[k] = a;
+  });
   map.draw();
   console.log('[tariel] world ready in', Math.round(performance.now() - t0), 'ms');
 }
@@ -109,11 +111,12 @@ function next() {
   const who = s.who === 'tariel' ? tariel : cast[s.who];
   if (who) for (const a of [tariel, cast.caulsleigh, cast.siofel, cast.rider]) if (a && a !== who && a.visible && !a.path && step > 1) a.face(who.pos[0], who.pos[2]);
   if (s.who === 'tariel' && tariel) walker.yaw = tariel.yaw;
-  showLine(CAST[s.who].name, s.line);
+  showLine(CAST[s.who].name, s.line, s.lang || LANG);
 }
-function showLine(name, line) {
+function showLine(name, line, lang) {
   $('talk').classList.remove('gone');
   $('talkname').textContent = name;
+  $('talklang').textContent = lang ? '[' + lang + ']' : '';
   $('talkline').textContent = line;
 }
 function riderComes() {
