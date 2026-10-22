@@ -145,8 +145,8 @@ notes already require.
 
 ## 6. Build order for Chapter One [PROPOSED]
 
-1. **T0.1** — the hill above Stanlech and the valley below it as terrain from the map; Tariel walking,
-   running, the camera; day and night.
+1. **T0.1** (built) — the hill above Stanlech and the valley below it as terrain from the map; Tariel walking,
+   running, the camera; day and night; the opening on the hill; the map that fills in as you explore.
 2. **T0.2** — Stanlech: the bridge, the river, the tavern, the market, houses; townsfolk on routines.
 3. **T0.3** — conversation; Elar; the Thiah / Tariel switch.
 4. **T0.4** — combat (fists, sword, bow); the bar fight.

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tariel Caulsleigh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #f3e9d2; --dim: #c9b993; --dark: rgba(20, 15, 10, 0.72); --red: #a3241a; --serif: 'Cormorant Garamond', Georgia, serif; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0d0b09; color: var(--ink); font-family: var(--serif); }
+  canvas#app { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+  .gone { display: none !important; }
+
+  #title, #loading { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 16px; }
+  #title { background: radial-gradient(ellipse at 50% 40%, rgba(25, 20, 14, 0.25), rgba(10, 8, 6, 0.86)); z-index: 5; }
+  #title h1 { font-size: clamp(40px, 8vw, 92px); letter-spacing: 0.08em; margin: 0; font-weight: 700; text-shadow: 0 2px 18px #000; }
+  #title h2 { font-style: italic; font-weight: 500; font-size: clamp(18px, 3vw, 30px); margin: 6px 0 30px; color: var(--dim); }
+  #title button { font-family: var(--serif); font-size: 24px; padding: 10px 46px; background: var(--red); color: var(--ink); border: 1px solid #e0b98a; cursor: pointer; letter-spacing: 0.06em; }
+  #title button:disabled { opacity: 0.6; cursor: wait; }
+  #title .small { margin-top: 14px; font-size: 15px; color: var(--dim); max-width: 520px; line-height: 1.4; }
+  #title #skip { background: none; border: none; font-size: 16px; padding: 6px; color: var(--dim); text-decoration: underline; margin-top: 8px; }
+  #title .ver { position: fixed; right: 16px; bottom: 12px; font-size: 15px; color: var(--dim); }
+  #loading { z-index: 6; background: #0d0b09; font-size: 22px; font-style: italic; color: var(--dim); }
+
+  #hud { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
+  #where { position: absolute; left: 16px; top: 12px; text-shadow: 0 1px 4px #000; }
+  #place { font-size: 24px; font-weight: 700; }
+  #side { font-size: 15px; letter-spacing: 0.12em; text-transform: uppercase; }
+  #side.cawel { color: #e8b0a0; } #side.szetter { color: #b8c8e8; }
+  #clock { position: absolute; right: 16px; top: 14px; font-size: 18px; text-shadow: 0 1px 4px #000; }
+  #objective { position: absolute; right: 16px; top: 42px; font-size: 17px; font-style: italic; max-width: 46vw; text-align: right; color: #f7dca0; text-shadow: 0 1px 4px #000; }
+  #objective::before { content: '◆ '; color: var(--red); font-style: normal; }
+  #staminabox { position: absolute; left: 50%; bottom: 40px; width: 160px; height: 5px; margin-left: -80px; background: rgba(0, 0, 0, 0.45); }
+  #stamina { height: 100%; background: #d9c27a; width: 100%; }
+  #hint { position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%); background: var(--dark); padding: 6px 14px; font-size: 17px; max-width: 90vw; text-align: center; }
+  #talk { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); width: min(760px, calc(100vw - 32px)); background: var(--dark); border-top: 2px solid var(--red); padding: 12px 18px 14px; box-sizing: border-box; }
+  #talkname { font-weight: 700; color: #f7dca0; font-size: 19px; }
+  #talkline { font-size: 22px; line-height: 1.3; margin-top: 3px; }
+  #talkmore { font-size: 14px; color: var(--dim); text-align: right; margin-top: 4px; }
+  #banner { position: absolute; left: 0; right: 0; top: 22%; text-align: center; opacity: 0; text-shadow: 0 2px 12px #000; }
+  #banner.show { animation: banner 4.2s ease forwards; }
+  #bannerbig { font-size: clamp(32px, 6vw, 60px); font-weight: 700; letter-spacing: 0.06em; }
+  #bannersmall { font-size: 20px; font-style: italic; color: var(--dim); }
+  @keyframes banner { 0% { opacity: 0; } 15% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
+
+  #map { position: fixed; inset: 0; background: rgba(10, 8, 6, 0.7); z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+  #mapcanvas { width: min(82vh, calc(100vw - 32px)); height: min(82vh, calc(100vw - 32px)); border: 8px solid #6b5236; box-shadow: 0 6px 40px #000; background: #d9c9a3; }
+  #mapnote { margin-top: 8px; font-size: 16px; color: var(--dim); text-align: center; }
+  #help { position: fixed; left: 16px; bottom: 16px; z-index: 3; background: var(--dark); padding: 10px 14px; font-size: 16px; line-height: 1.5; pointer-events: none; }
+  kbd { font-family: var(--serif); background: rgba(255, 255, 255, 0.12); padding: 0 5px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<canvas id="app" tabindex="0"></canvas>
+
+<div id="loading"><div id="loadmsg">Unrolling the map…</div></div>
+
+<div id="title">
+  <h1>TARIEL CAULSLEIGH</h1>
+  <h2>Chapter One · The Trenite at Stanlech</h2>
+  <button id="begin" disabled>Loading…</button>
+  <button id="skip">Skip the opening</button>
+  <div class="small">An early build: the hill above Stanlech, the Yolo valley, day and night. The people are stand-in figures until the real ones are made.</div>
+  <div class="ver">Build <span id="ver"></span></div>
+</div>
+
+<div id="hud" class="gone">
+  <div id="where"><div id="place"></div><div id="side"></div></div>
+  <div id="clock"></div>
+  <div id="objective" class="gone"></div>
+  <div id="staminabox" class="gone"><div id="stamina"></div></div>
+  <div id="hint" class="gone"></div>
+  <div id="talk" class="gone"><div id="talkname"></div><div id="talkline"></div><div id="talkmore">click or Enter ▸</div></div>
+  <div id="banner"><div id="bannerbig"></div><div id="bannersmall"></div></div>
+</div>
+
+<div id="map" class="gone"><canvas id="mapcanvas" width="900" height="900"></canvas><div id="mapnote"></div></div>
+
+<div id="help" class="gone">
+  <kbd>W A S D</kbd> move · <kbd>Mouse</kbd> look · <kbd>Wheel</kbd> zoom<br>
+  <kbd>Shift</kbd> run · <kbd>C</kbd> walk / jog · <kbd>Space</kbd> jump<br>
+  <kbd>M</kbd> map · <kbd>T</kbd> (hold) hurry time · <kbd>H</kbd> hide this
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
