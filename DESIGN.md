@@ -1,6 +1,6 @@
 # Tariel Caulsleigh — Design Document (Chapter One: The Trenite at Stanlech)
 
-*Draft 1, 22 October 2026. For Rhys to approve or change. Everything here is built on Rhys's notes
+*Draft 2, 22 October 2026 (Rhys's answers folded in). For Rhys to approve or change. Everything here is built on Rhys's notes
 (Tariel Caulsleigh – Some Notes, The Saeslands Novel, The Saeslands World Compendium, the Azgaar map
 "Tariel's World"); where those notes and the map disagree, **the notes win**. Places on the map that the
 notes don't mention still exist.*
@@ -24,10 +24,10 @@ characters, never through exposition dumps.
 
 - **Vast Regions**, in the manner of Breath of the Wild / Tears of the Kingdom. Each region can be mapped
   by exploring it — your map fills in where you have been — and each has a **Revealer** that gives you its
-  fuller map in one go. **[ASK]** What is a Revealer, in-world? (A tower? A cartographer? A shrine? A
-  high lookout with a resident scholar?) And how big is a region — a shire? a country?
-- **Regions follow the map's political divisions** **[PROPOSED]**: e.g. the Saes shires (Cawel, Ghellith,
-  Bronbrar, Breinbrar, Styry Whish, Dánreith, Án Fwechteraiślen, Afontamesa), Kern's Gontethiw, and so on.
+  fuller map in one go. **Revealers are people** (Rhys): cartographers and explorers, each with the
+  map of their region to share.
+- **Region size** (Rhys): roughly one Saes shire; several Mittland counties; about a third of
+  Nóttenlanter.
 - **Scale.** The Azgaar map is about 1,500 × 780 pixels, roughly 1.5 miles a pixel — a true-scale
   continent is impossible in a browser. The terrain is built *from* the map's own heights, biomes and
   rivers, but compressed: a region is a few kilometres across, its towns real places you walk through.
@@ -38,8 +38,8 @@ characters, never through exposition dumps.
 Stanlech isn't on the Azgaar map (Rhys: "I somehow completely neglected it"). It goes where the
 **Yolo River** forms the border between **Cawel Shire** and Sźettereich's **Ausserreich Province**, at map
 position ≈ (303, 478) — between the map's Mahlterngen and Fluor. The town sits on both banks: the Saes
-side and the Sźetter side, joined by its bridge. (The river's name came from the map generator; it can be
-renamed **[ASK]**.)
+side and the Sźetter side, joined by its bridge. **Shappel-ont'-Laik** is upriver, on the Cawel side
+(Rhys).
 
 ## 3. Chapter One — the Trenite at Stanlech
 
@@ -61,9 +61,9 @@ From Rhys's notes; the plot is new, the world and characters canon.
    conversations, warnings not to travel alone, people missing; the news from **Shappel-ont'-Laik** — a
    Stanlech woman murdered — arriving in the town. His crimes are implied, never shown (Rhys's notes).
    The player pieces it together through talk and exploration before he is revealed.
-6. **The third night.** The chapter's climax — Punk revealed, a confrontation. Tariel is *always* better
-   than him (Rhys's notes). **[ASK]** How should Chapter One end: Punk escapes (he must survive to reach
-   the Saes courts later), and Tariel leaves Stanlech for…?
+6. **The order of things** (Rhys): the establishment of Stanlech; the games in the tavern; meeting Elar;
+   encountering Punk briefly; later, heading north. The exact ending of Chapter One is still open —
+   Punk must survive it (he reaches the Saes courts later); Tariel is *always* better than him.
 
 Not in Chapter One (per Rhys's notes): **Galvan, Crow of Fourdooms** (introduced much later, in Kern, with
 Gwethyl), the corrupt trial, Ranthor.
@@ -84,10 +84,9 @@ Gwethyl), the corrupt trial, Ranthor.
 ### Conversation
 
 Branching dialogue with character-driven choices, no morality meter. People remember what you said and
-which of your faces you said it with. **Languages**: Saes, Kernac, Gymrac, Merkhscowes and the rest are
-heard in the world; Thiah and Tariel understand some and not others. **[ASK]** Should there be any real
-written or spoken vocabulary for these languages (as with Severian in Frontline), or English with a
-language label?
+which of your faces you said it with. **Languages** (Rhys): written in English, with a label saying
+which language is being spoken — *[Kernac]*, *[Merkhscowes]* — and Thiah and Tariel understand some
+and not others.
 
 ### Combat
 
@@ -115,9 +114,20 @@ changes how its people treat her. Political effects, but no ruling.
 
 ### Tavern games
 
-**[ASK]** Rhys mentioned four — a chess-like game, a poker-like game, a drinking game and nude oil
-wrestling — but their details weren't in the files sent. Need: names, rules, and who plays them. (Oil
-wrestling would be presented as the sport it is, not as anything sexual.)
+From Rhys's Game Ideas (names and meanings his; the rules made up as we go):
+
+- **Board games** (chess / tafl-like): **Cynwig** ("King's War": a two-player or two-team battle game,
+  like chess); **Hiltavel** ("Battle Game"); **Wulfund** ("Wolf and…": asymmetrical); **Feondfang**
+  ("Enemy-Trap").
+- **Card games**: **Swic / Sweek** ("Deception": poker-like); **Hlotpleg / Sjlot** ("lot-play").
+- **Rune games**: **Wedh / Weð** ("I pledge"); **Threot** ("The Three": Yahtzee-like).
+- **Dexterity**: **Stanflit** ("stone-flight": flick stones or discs toward a central circle).
+- **Social deduction**: **Bana** ("death / killers": Mafia / Werewolf for the Saes — roles drawn as runes;
+  in the night phase the Bana agree on a victim and put a rune in their hand: white, they live; black,
+  they "die").
+- Also mentioned by Rhys: a **drinking game** and **oil wrestling** (no details yet; the wrestling would be
+  presented as the sport it is).
+- **Not in the game**: *Fetcwena* (Claude declined to build it).
 
 ### Dark material
 
@@ -146,9 +156,8 @@ notes already require.
 
 ## 7. Open questions for Rhys
 
-1. What is a **Revealer** in-world, and how big is a **region**?
-2. How does **Chapter One end**, and where does Tariel go next?
-3. The **tavern games**: names and rules.
-4. Real vocabulary for the **languages**, or English with labels?
-5. Rename the **Yolo River** (a map-generator name)?
-6. **Shappel-ont'-Laik**: where is it relative to Stanlech? (Proposed: upriver on the Cawel side.)
+Answered on 22 October: Revealers, region size, the order of Chapter One, the tavern games' names,
+English with language labels, the Yolo River's name, Shappel-ont'-Laik. Still open:
+
+1. The exact **ending of Chapter One**.
+2. The **drinking game** and **oil wrestling**: names and any details.
