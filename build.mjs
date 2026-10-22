@@ -8,7 +8,8 @@ await esbuild.build({
 });
 const ver = (readFileSync('src/game/main.js', 'utf8').match(/const VERSION = '([^']+)'/) || [, 'dev'])[1];
 let html = readFileSync('src/index.html', 'utf8');
-html = html.replace('<script src="game.js"></script>', `<script src="game.js?v=${ver}"></script>`)
+const stamp = ver + '.' + Date.now().toString(36);
+html = html.replace('<script src="game.js"></script>', `<script src="game.js?v=${stamp}"></script>`)
            .replace('<meta charset="utf-8">', '<meta charset="utf-8">\n<meta http-equiv="Cache-Control" content="no-cache">');
 writeFileSync('index.html', html);
 console.log('version', ver, '·', (statSync('game.js').size / 1024 / 1024).toFixed(2), 'MB');

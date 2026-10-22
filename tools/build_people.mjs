@@ -31,6 +31,9 @@ const PEOPLE = {
     hair: ['Hair_SimpleParted', 'Hair_Beard'], outfit: 'ranger_blue', hairTex: 'greying', eyes: 'eye_brown' },
   Siofel: { sex: 'm', parts: ['Male_Ranger_Body', 'Male_Ranger_Legs', 'Male_Ranger_Arms', 'Male_Ranger_Feet_Boots'],
     hair: ['Hair_Buzzed'], outfit: 'ranger_brown', hairTex: 'dark', eyes: 'eye_brown' },
+  // Thiah Kirðotr: Tariel undercover - barefoot (the base body's own feet), posh rags, hair loose (her notes)
+  Thiah: { sex: 'f', parts: ['Female_Peasant_Body', 'Female_Peasant_Legs', 'Female_Peasant_Arms'], bareFeet: true,
+    hair: ['Hair_Long'], outfit: 'peasant_light', hairTex: 'darkblonde', eyes: 'eye_green' },
   Rider: { sex: 'm', parts: ['Male_Peasant_Body', 'Male_Peasant_Legs', 'Male_Peasant_Arms', 'Male_Peasant_Feet'],
     hair: ['Hair_SimpleParted'], outfit: 'peasant', hairTex: 'dark', eyes: 'eye_brown' },
 };
@@ -54,7 +57,7 @@ async function build(name, who) {
       for (let k = 1; k < 4; k++) if (w[k] > w[b]) b = k;
       dom.push(names[j[b]]);
     }
-    const keepBone = new Set(['Head', 'neck_01']), idx = I.getArray(), keep = [];
+    const keepBone = new Set(who.bareFeet ? ['Head', 'neck_01', 'foot_l', 'foot_r', 'ball_l', 'ball_r', 'ball_leaf_l', 'ball_leaf_r'] : ['Head', 'neck_01']), idx = I.getArray(), keep = [];
     for (let t = 0; t < idx.length; t += 3) if ([idx[t], idx[t + 1], idx[t + 2]].some((v) => keepBone.has(dom[v]))) keep.push(idx[t], idx[t + 1], idx[t + 2]);
     I.setArray(idx instanceof Uint16Array ? new Uint16Array(keep) : new Uint32Array(keep));
   }
@@ -135,4 +138,5 @@ async function build(name, who) {
   console.log(name, (size / 1e6).toFixed(2) + ' MB', '| clips', root.listAnimations().length, '| materials', root.listMaterials().map((m) => m.getName()).join(' '));
 }
 
-for (const [name, who] of Object.entries(PEOPLE)) await build(name, who);
+const only = process.argv[5];
+for (const [name, who] of Object.entries(PEOPLE)) if (!only || only === name) await build(name, who);

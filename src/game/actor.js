@@ -17,7 +17,9 @@ export function loadBody(pc, app, name) {
 }
 
 // which clip for which gait
-const GAIT = { idle: 'Idle_Loop', walk: 'Walk_Loop', jog: 'Jog_Fwd_Loop', sprint: 'Sprint_Loop', air: 'Jump_Loop', talk: 'Idle_Talking_Loop', arms: 'Idle_FoldArms_Loop' };
+const GAIT = { idle: 'Idle_Loop', walk: 'Walk_Loop', jog: 'Jog_Fwd_Loop', sprint: 'Sprint_Loop', air: 'Jump_Loop', talk: 'Idle_Talking_Loop', arms: 'Idle_FoldArms_Loop', sit: 'Sitting_Idle_Loop', yes: 'Yes', no: 'Idle_No_Loop' };
+// a horse's (the Quaternius animal rig)
+export const HORSE = { idle: 'Idle', walk: 'Walk', jog: 'Gallop', sprint: 'Gallop' };
 
 export class Actor {
   constructor(pc, app, asset, opts) {
@@ -56,9 +58,11 @@ export class Actor {
       try { e.anim.assignAnimation(name, t, undefined, 1, true); this.clips.add(name); } catch (err) { /* skip */ }
     }
     this.cur = null; this.pos = [0, 0, 0]; this.yaw = 0; this.path = null; this.speed = 0; this.pose = 'idle';
+    this.gaits = opts.clips || GAIT; this.paces = opts.paces || { walk: 1.6, jog: 4.6 };
+    this.mount = null; this.saddle = 0;
   }
   play(gait, rate) {
-    const clip = GAIT[gait] || gait;
+    const clip = this.gaits[gait] || GAIT[gait] || gait;
     if (!this.clips.has(clip)) return;
     if (clip !== this.cur) { try { this.body.anim.baseLayer.transition(clip, 0.22); } catch (e) { /* keep going */ } this.cur = clip; }
     this.body.anim.speed = rate || 1;
@@ -68,6 +72,11 @@ export class Actor {
   // walk a list of [x, z] points at a pace (m/s); done() when there
   go(points, pace, done) { this.path = points.slice(); this.speed = pace || 1.9; this.onArrive = done || null; }
   update(dt) {
+    if (this.mount) {
+      // riding: where the horse goes, sitting
+      this.pos = [this.mount.pos[0], this.mount.pos[1] + this.saddle, this.mount.pos[2]]; this.yaw = this.mount.yaw;
+      this.play('sit'); this.sync(); return;
+    }
     if (this.path && this.path.length) {
       const [tx, tz] = this.path[0], dx = tx - this.pos[0], dz = tz - this.pos[2], d = Math.hypot(dx, dz);
       if (d < 0.4) { this.path.shift(); if (!this.path.length) { this.path = null; if (this.onArrive) this.onArrive(); } }
@@ -78,7 +87,7 @@ export class Actor {
         while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2;
         this.yaw += a * Math.min(1, dt * 8);
       }
-      this.play(this.speed > 3.5 ? 'jog' : 'walk', this.speed > 3.5 ? this.speed / 4.6 : this.speed / 1.6);
+      this.play(this.speed > 3.5 ? 'jog' : 'walk', this.speed > 3.5 ? this.speed / this.paces.jog : this.speed / this.paces.walk);
     } else this.play(this.pose);
     this.sync();
   }

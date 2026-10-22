@@ -176,9 +176,8 @@ function bridgeInto(g) {
 export function buildTowns(pc, app, list) {
   const g = new Geo();
   for (const b of list) {
-    if (b.kind === 'house' || b.kind === 'tavern') houseInto(g, b);
-    else if (b.kind === 'post') postInto(g, b);
-    else if (b.kind === 'well') wellInto(g, b);
+    // houses, the tavern and the posts are built from the village kit (village.js)
+    if (b.kind === 'well') wellInto(g, b);
   }
   bridgeInto(g);
   const e = new pc.Entity('towns');

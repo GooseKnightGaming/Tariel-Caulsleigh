@@ -75,6 +75,40 @@ ok(!tooDeep(mid[0], mid[1]), 'the bridge can be walked');
   ok(peak > 0.4 && w5.onGround, 'jump: up ' + peak.toFixed(2) + ' m and down');
 }
 
+// walls, doors, the bridge, the well
+{
+  const { blocked, floorAt } = await import('../src/world/solids.js');
+  const t = W.tavern(), at = (lx, lz) => W.toWorld(t, lx, lz);
+  const face = (b, lx, lz, tx, tz) => { const [ax, az] = W.toWorld(b, lx, lz), [bx, bz] = W.toWorld(b, tx, tz); return Math.atan2(-(bx - ax), -(bz - az)); };
+  // into the tavern's front wall, beside the door: stopped outside
+  let w = new Walker(...at(-2.5, 7), 0), h = face(t, -2.5, 7, -2.5, 0);
+  for (let k = 0; k < 60 * 6; k++) w.step(1 / 60, { moveZ: 1 }, h);
+  ok(floorAt(w.pos[0], w.pos[2]) === null, 'the tavern wall stops her');
+  // through the door (at x = +1 on the front): in, and standing on its floor
+  w = new Walker(...at(1, 7), 0); h = face(t, 1, 7, 1, 0);
+  for (let k = 0; k < 60 * 4; k++) w.step(1 / 60, { moveZ: 1 }, h);
+  ok(floorAt(w.pos[0], w.pos[2]) !== null && Math.abs(w.pos[1] - t.y) < 0.01, 'in through the tavern door, on its floor');
+  // and not out through the back wall
+  for (let k = 0; k < 60 * 6; k++) w.step(1 / 60, { moveZ: 1 }, h);
+  ok(floorAt(w.pos[0], w.pos[2]) !== null, 'the back wall holds');
+  // every house has a way in: just inside its door is open floor
+  let shut = 0;
+  for (const b of W.buildings()) if (b.kind !== 'well') {
+    const [x, z] = W.toWorld(b, W.wallCells(b).find((c) => c.door).lx, b.d - 0.6);
+    if (blocked(x, z, 0.3, b.y + 0.3, b.y + 1.7)) shut++;
+  }
+  ok(shut === 0, 'every doorway is open (' + shut + ' shut)');
+  // the well is solid
+  const well = W.buildings().find((b) => b.kind === 'well');
+  ok(!!blocked(well.x, well.z, 0.3, well.y + 0.3, well.y + 1.7), 'the well is solid');
+  // onto the bridge from the road, and over the river
+  const [ax, az] = W.fromRiver(0, -30), [bx, bz] = W.fromRiver(0, 30);
+  w = new Walker(ax, az, 0); h = Math.atan2(-(bx - ax), -(bz - az));
+  let onBridge = false;
+  for (let k = 0; k < 60 * 20; k++) { w.step(1 / 60, { moveZ: 1 }, h); if (bridgeAt(w.pos[0], w.pos[2]) !== null && w.pos[1] > W.waterLevel(0) + 1) onBridge = true; }
+  ok(onBridge && w.side() === 'Sźettereich', 'up onto the bridge and across');
+}
+
 // the sky
 ok(near(sunDir(6)[1], 0, 0.02) && near(sunDir(18)[1], 0, 0.02), 'sunrise and sunset on the horizon');
 ok(sunDir(6)[0] > 0.9, 'the sun rises in the east');

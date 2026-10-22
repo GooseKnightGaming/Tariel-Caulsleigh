@@ -16,7 +16,15 @@ bridge, Shappel-ont'-Laik upriver, the woods; Tariel on foot (walk, jog, sprint,
 camera; a 24-minute day with dawn mist, dusk and stars; the opening on the hill (draft lines); the map
 (**M**), which fills in as you explore. Tariel, Lord Caulsleigh, First Sergeant Síofel and the rider are built by `tools/build_people.mjs` from the Quaternius packs (Universal Base Characters, Modular Character Outfits – Fantasy, Universal Animation Library 1 and 2; CC0); outfit colours are placeholders until the Saes colours are settled.
 
+**T0.1.1** — proper buildings: every house in Stanlech and Shappel-ont'-Laik is built from the Medieval
+Village MegaKit (Saes plaster and timber on the Cawel bank, rough brick on the Sźetter bank), solid, with an
+open door and a floor to walk in on; the tavern furnished from the Fantasy Props MegaKit, with a bed it lets
+by the night (**E**, as Thiah, in the evening: three nights make the Trenite). **Q** switches between Tariel
+and Thiah Kirðotr (barefoot, posh rags, hair loose). **Esc** pauses (controls, settings). The rider comes up
+the hill on horseback. Walls, the well and tree trunks are solid; the camera stays in front of walls; the
+bridge can be walked.
+
 Controls: **WASD** move · **mouse** look · **wheel** zoom · **Shift** run · **C** walk/jog · **Space**
-jump · **M** map · hold **T** to hurry time · **H** help. A gamepad works too.
+jump · **Q** Tariel / Thiah · **E** use · **M** map · hold **T** to hurry time · **Esc** pause · **H** help. A gamepad works too.
 
 Building: `npm install`, `npm test`, `node build.mjs` (writes `index.html` and `game.js` here, from `src/`).

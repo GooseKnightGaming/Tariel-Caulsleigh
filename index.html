@@ -46,6 +46,21 @@
   #bannersmall { font-size: 20px; font-style: italic; color: var(--dim); }
   @keyframes banner { 0% { opacity: 0; } 15% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
 
+  #who { font-size: 15px; font-style: italic; color: var(--dim); }
+  #prompt { position: absolute; left: 50%; bottom: 110px; transform: translateX(-50%); background: var(--dark); padding: 6px 16px; font-size: 19px; }
+  #fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 0.35s; z-index: 3; }
+  #fade.on { opacity: 1; } #fade.long { transition: opacity 1.2s; }
+  #pause { position: fixed; inset: 0; z-index: 7; background: rgba(10, 8, 6, 0.72); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  #pausepage { background: rgba(25, 19, 13, 0.95); border-top: 3px solid var(--red); padding: 18px 26px 22px; min-width: min(360px, calc(100vw - 32px)); box-sizing: border-box; max-width: 100%; }
+  #pausepage h3 { margin: 0 0 12px; font-size: 30px; letter-spacing: 0.06em; }
+  #pausepage .pg { display: none; flex-direction: column; gap: 8px; }
+  #pausepage[data-page=main] .pg-main, #pausepage[data-page=controls] .pg-controls, #pausepage[data-page=settings] .pg-settings { display: flex; }
+  #pausepage button { font-family: var(--serif); font-size: 20px; padding: 7px 14px; background: rgba(255, 255, 255, 0.06); color: var(--ink); border: 1px solid rgba(224, 185, 138, 0.4); cursor: pointer; text-align: left; }
+  #pausepage button:hover { background: var(--red); }
+  #pausepage table { font-size: 17px; border-collapse: collapse; margin-bottom: 8px; }
+  #pausepage td { padding: 3px 12px 3px 0; vertical-align: top; }
+  #pausepage label { font-size: 18px; display: flex; align-items: center; gap: 10px; }
+  #pausepage select { font-family: var(--serif); font-size: 17px; }
   #map { position: fixed; inset: 0; background: rgba(10, 8, 6, 0.7); z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
   #mapcanvas { width: min(82vh, calc(100vw - 32px)); height: min(82vh, calc(100vw - 32px)); border: 8px solid #6b5236; box-shadow: 0 6px 40px #000; background: #d9c9a3; }
   #mapnote { margin-top: 8px; font-size: 16px; color: var(--dim); text-align: center; }
@@ -63,28 +78,66 @@
   <h2>Chapter One · The Trenite at Stanlech</h2>
   <button id="begin" disabled>Loading…</button>
   <button id="skip">Skip the opening</button>
-  <div class="small">An early build: the hill above Stanlech, the Yolo valley, day and night. Tariel, her father, Síofel and the rider are dressed from the Quaternius packs; their colours are placeholders.</div>
+  <div class="small">An early build: the hill above Stanlech, the Yolo valley, the town and its tavern, day and night. Tariel, her father, Síofel and the rider are dressed from the Quaternius packs; their colours are placeholders.</div>
   <div class="ver">Build <span id="ver"></span></div>
 </div>
 
 <div id="hud" class="gone">
-  <div id="where"><div id="place"></div><div id="side"></div></div>
+  <div id="where"><div id="place"></div><div id="side"></div><div id="who">as Tariel Caulsleigh</div></div>
   <div id="clock"></div>
   <div id="objective" class="gone"></div>
   <div id="staminabox" class="gone"><div id="stamina"></div></div>
   <div id="hint" class="gone"></div>
+  <div id="prompt" class="gone"></div>
   <div id="talk" class="gone"><div><span id="talkname"></span> <span id="talklang"></span></div><div id="talkline"></div><div id="talkmore">click or Enter ▸</div></div>
   <div id="banner"><div id="bannerbig"></div><div id="bannersmall"></div></div>
 </div>
+
+<div id="fade"></div>
+
+<div id="pause" class="gone"><div id="pausepage" data-page="main">
+  <div class="pg pg-main">
+    <h3>Paused</h3>
+    <button id="p-resume">Resume</button>
+    <button id="p-controls">Controls</button>
+    <button id="p-settings">Settings</button>
+    <button id="p-restart">Start again from the hill</button>
+  </div>
+  <div class="pg pg-controls">
+    <h3>Controls</h3>
+    <table>
+      <tr><td><kbd>W A S D</kbd> / arrows</td><td>move</td></tr>
+      <tr><td><kbd>Mouse</kbd></td><td>look · <kbd>Wheel</kbd> zoom</td></tr>
+      <tr><td><kbd>Shift</kbd></td><td>run (tires her)</td></tr>
+      <tr><td><kbd>C</kbd> · <kbd>Ctrl</kbd></td><td>walk / jog · walk while held</td></tr>
+      <tr><td><kbd>Space</kbd></td><td>jump</td></tr>
+      <tr><td><kbd>Q</kbd></td><td>Tariel ⇄ Thiah Kirðotr</td></tr>
+      <tr><td><kbd>E</kbd></td><td>use (the tavern's bed)</td></tr>
+      <tr><td><kbd>M</kbd></td><td>map</td></tr>
+      <tr><td><kbd>T</kbd> (hold)</td><td>hurry time</td></tr>
+      <tr><td><kbd>H</kbd></td><td>show / hide the help</td></tr>
+      <tr><td><kbd>Esc</kbd> · <kbd>P</kbd></td><td>pause</td></tr>
+    </table>
+    <button class="p-back">Back</button>
+  </div>
+  <div class="pg pg-settings">
+    <h3>Settings</h3>
+    <label>Mouse speed <input id="set-sens" type="range" min="0.3" max="3" step="0.1"></label>
+    <label><input id="set-invert" type="checkbox"> Invert looking up and down</label>
+    <label><input id="set-shadows" type="checkbox"> Shadows</label>
+    <label>Picture <select id="set-res"><option value="low">Faster</option><option value="normal">Normal</option><option value="high">Sharper</option></select></label>
+    <button class="p-back">Back</button>
+  </div>
+</div></div>
 
 <div id="map" class="gone"><canvas id="mapcanvas" width="900" height="900"></canvas><div id="mapnote"></div></div>
 
 <div id="help" class="gone">
   <kbd>W A S D</kbd> move · <kbd>Mouse</kbd> look · <kbd>Wheel</kbd> zoom<br>
   <kbd>Shift</kbd> run · <kbd>C</kbd> walk / jog · <kbd>Space</kbd> jump<br>
-  <kbd>M</kbd> map · <kbd>T</kbd> (hold) hurry time · <kbd>H</kbd> hide this
+  <kbd>Q</kbd> Tariel ⇄ Thiah · <kbd>E</kbd> use · <kbd>M</kbd> map<br><kbd>T</kbd> (hold) hurry time · <kbd>Esc</kbd> pause · <kbd>H</kbd> hide this
 </div>
 
-<script src="game.js?v=T0.1"></script>
+<script src="game.js?v=T0.1.1.mvjwqt0u"></script>
 </body>
 </html>

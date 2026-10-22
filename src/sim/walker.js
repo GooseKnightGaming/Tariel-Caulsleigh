@@ -2,6 +2,7 @@
 // input: { moveX, moveZ (-1..1, relative to the camera's heading), run, sprint, jump }, heading: the camera's yaw.
 
 import { heightAt, waterAt, BOUND, riverCoords, BRIDGE, RIVER } from '../world/world.js';
+import { blocked, floorAt } from '../world/solids.js';
 
 export const MOVE = {
   walk: 1.9, jog: 4.6, sprint: 7.0,      // m/s
@@ -10,6 +11,8 @@ export const MOVE = {
   turn: 10,                               // how fast she turns to face where she goes (rad/s at full)
   wade: 0.9,                              // deeper water than this (to the thigh) is not walked into
   steep: 0.62,                            // ground steeper than this (rise over run) is not climbed
+  step: 0.45,                             // a step up this high (a kerb, the bridge's end, a doorstep) is taken in stride
+  radius: 0.3,                            // her width, against walls
   stamina: 100, sprintDrain: 18, regen: 14,
 };
 
@@ -24,8 +27,8 @@ export function bridgeAt(x, z) {
   return ya + (yb - ya) * t + 0.35 + Math.sin(Math.PI * Math.max(0, Math.min(1, t))) * 0.6;   // a gentle hump
 }
 export function groundAt(x, z) {
-  const b = bridgeAt(x, z);
-  return b !== null ? Math.max(b, heightAt(x, z)) : heightAt(x, z);
+  const b = bridgeAt(x, z), f = floorAt(x, z), h = heightAt(x, z);
+  return Math.max(h, b === null ? -Infinity : b, f === null ? -Infinity : f);
 }
 // too deep to walk into: water above the thigh, off the bridge
 export function tooDeep(x, z) {
@@ -78,8 +81,9 @@ export class Walker {
       const nx = this.pos[0] + (ax === 0 ? this.vel[0] * dt : 0), nz = this.pos[2] + (ax === 2 ? this.vel[2] * dt : 0);
       if (Math.abs(nx) > BOUND || Math.abs(nz) > BOUND) { this.vel[ax] = 0; continue; }
       if (tooDeep(nx, nz)) { this.vel[ax] = 0; this.events.push({ type: 'water' }); continue; }
+      if (blocked(nx, nz, MOVE.radius, this.pos[1] + 0.3, this.pos[1] + 1.7)) { this.vel[ax] = 0; this.events.push({ type: 'bump' }); continue; }
       const there = groundAt(nx, nz), run = Math.abs(ax === 0 ? nx - this.pos[0] : nz - this.pos[2]);
-      if (this.onGround && run > 1e-4 && (there - here) / run > MOVE.steep && there > this.pos[1] + 0.25) { this.vel[ax] = 0; continue; }
+      if (this.onGround && there - this.pos[1] > MOVE.step && run > 1e-4 && (there - here) / run > MOVE.steep) { this.vel[ax] = 0; continue; }
       this.pos[0] = nx; this.pos[2] = nz;
     }
     // up and down

@@ -158,37 +158,101 @@ export function roadDist(x, z) {
 }
 
 // ── buildings: Stanlech (both banks) and Shappel-ont'-Laik ────────────────
-// style: 'saes' (timber frame, thatch) or 'szetter' (dark timber, steep shingle roofs)
+// Houses are built from the Medieval Village kit on a 2 m grid: w cells across the front (which faces the
+// street, local +z), d cells deep, 1 or 2 storeys of 3.12 m. style: 'saes' (plaster and timber) or 'szetter'
+// (rough brick). The roof kit comes in widths 4, 6, 8 m, so w is 2-4 and w <= d.
+export const STOREY = 3.12;
+const ROOF_SIZES = { 2: [2, 3, 4], 3: [3, 4, 5], 4: [4, 5] };   // allowed d for each w
+function level(x, z, yaw, w, d) {
+  // the floor sits just above the highest ground under the house
+  const c = Math.cos(yaw), sn = Math.sin(yaw), hw = w, hd = d; let top = -Infinity;
+  for (const [lx, lz] of [[-hw, -hd], [hw, -hd], [-hw, hd], [hw, hd], [0, 0], [0, hd], [0, -hd]]) {
+    const wx = x + lx * c + lz * sn, wz = z - lx * sn + lz * c;
+    top = Math.max(top, heightAt(wx, wz));
+  }
+  return top + 0.05;
+}
 export function buildings() {
+  if (buildings.cache) return buildings.cache;
   const r = rng(SEED + 11), out = [];
-  const along = (s, n, w, d, yawExtra, kind, style, name) => {
-    const p = fromRiver(s, n);
-    // facing the street (across the river's line); the river's own heading gives the yaw
-    const yaw = Math.atan2(DOWN[0], DOWN[1]) + (yawExtra || 0);
-    out.push({ x: p[0], z: p[1], w, d, h: kind === 'tavern' ? 7.5 : 4.2 + r() * 1.2, yaw, kind, style, name: name || null, y: heightAt(p[0], p[1]) });
+  const street = Math.atan2(DOWN[0], DOWN[1]);
+  const house = (s, n, w, d, storeys, extra, kind, style, name) => {
+    const [x, z] = fromRiver(s, n), yaw = street + (extra || 0);
+    const allowed = ROOF_SIZES[w]; if (!allowed.includes(d)) d = allowed[Math.min(allowed.length - 1, Math.max(0, d - allowed[0]))];
+    out.push({ x, z, yaw, w, d, storeys, kind, style, name: name || null, y: level(x, z, yaw, w, d), seed: Math.floor(r() * 1e6) });
   };
-  // the high road crosses the river at s = 0; houses face it along both banks
-  // Cawel bank (n < 0): the tavern by the bridge, the market square further up the street
-  along(-18, -40, 14, 10, 0, 'tavern', 'saes', 'The tavern');
+  // Cawel bank (n < 0): the tavern by the bridge, houses along the street, the market square with its well
+  house(-20, -40, 4, 5, 2, 0, 'tavern', 'saes', 'The tavern');
   for (const [s, n] of [[22, -38], [-20, -64], [20, -66], [-20, -150], [20, -152], [-22, -178], [22, -180], [-48, -42], [48, -44], [-76, -40], [74, -42], [-104, -42], [100, -44], [-130, -46]])
-    along(s, n, 8 + r() * 3, 6 + r() * 2, s < 0 ? 0 : Math.PI, 'house', 'saes');
-  // the market square (open ground) between n = -85 and -125 on the street; its well
-  out.push({ kind: 'well', x: fromRiver(0, -105)[0], z: fromRiver(0, -105)[1], y: heightAt(...fromRiver(0, -105)), w: 2, d: 2, h: 1, yaw: 0, style: 'saes' });
-  // the Saes guard post at the bridge
-  along(14, -22, 4, 4, 0, 'post', 'saes', 'Saes guard post');
-  // Sźetter bank (n > 0)
+    house(s, n, 2 + Math.floor(r() * 2), 3 + Math.floor(r() * 2), r() < 0.45 ? 2 : 1, s < 0 ? 0 : Math.PI, 'house', 'saes');
+  const wp = fromRiver(0, -105);
+  out.push({ kind: 'well', x: wp[0], z: wp[1], y: heightAt(wp[0], wp[1]), yaw: 0, w: 1, d: 1, storeys: 0, style: 'saes' });
+  house(14, -22, 2, 2, 1, 0, 'post', 'saes', 'Saes guard post');
+  // Sźetter bank (n > 0): taller, brick
   for (const [s, n] of [[-20, 38], [20, 40], [-22, 66], [22, 64], [-20, 94], [22, 96], [-50, 40], [50, 42], [-80, 44], [78, 42], [-24, 124], [24, 126]])
-    along(s, n, 7 + r() * 3, 6 + r() * 2, s < 0 ? 0 : Math.PI, 'house', 'szetter');
-  along(-14, 22, 4, 4, 0, 'post', 'szetter', 'Sźetter toll house');
-  // Shappel-ont'-Laik: a handful of houses round a green
+    house(s, n, 2 + Math.floor(r() * 2), 3 + Math.floor(r() * 2), r() < 0.7 ? 2 : 1, s < 0 ? 0 : Math.PI, 'house', 'szetter');
+  house(-14, 22, 2, 2, 1, 0, 'post', 'szetter', 'Sźetter toll house');
+  // Shappel-ont'-Laik: a handful of houses round a green, facing it
   const sp = PLACES.shappel;
   for (let k = 0; k < 6; k++) {
     const ang = (k / 6) * Math.PI * 2 + 0.4, rr = 32 + r() * 10;
     const x = sp[0] + Math.cos(ang) * rr, z = sp[1] + Math.sin(ang) * rr;
-    out.push({ x, z, y: heightAt(x, z), w: 7 + r() * 2, d: 5.5 + r(), h: 4 + r(), yaw: -ang + Math.PI / 2, kind: 'house', style: 'saes', name: null });
+    const yaw = Math.atan2(sp[0] - x, sp[1] - z), w = 2 + Math.floor(r() * 2), d = 3 + Math.floor(r() * 2);
+    out.push({ x, z, yaw, w, d: ROOF_SIZES[w].includes(d) ? d : ROOF_SIZES[w][0], storeys: 1, kind: 'house', style: 'saes', name: null, y: level(x, z, yaw, w, d), seed: Math.floor(r() * 1e6) });
+  }
+  buildings.cache = out;
+  return out;
+}
+// a house's walls, cell by cell: [{ side: 'front'|'back'|'left'|'right', i, lx, lz, rot, door }]
+// (local frame: x across the front, z out of the front; rot turns the kit's wall, which faces +z)
+export function wallCells(b) {
+  const W = b.w * 2, D = b.d * 2, out = [];
+  const doorAt = Math.floor(b.w / 2);
+  for (let i = 0; i < b.w; i++) {
+    out.push({ side: 'front', i, lx: -W / 2 + 1 + 2 * i, lz: D / 2, rot: 0, door: i === doorAt });
+    out.push({ side: 'back', i, lx: W / 2 - 1 - 2 * i, lz: -D / 2, rot: Math.PI, door: false });
+  }
+  for (let i = 0; i < b.d; i++) {
+    out.push({ side: 'left', i, lx: -W / 2, lz: -D / 2 + 1 + 2 * i, rot: -Math.PI / 2, door: false });
+    out.push({ side: 'right', i, lx: W / 2, lz: D / 2 - 1 - 2 * i, rot: Math.PI / 2, door: false });
   }
   return out;
 }
+
+// the tavern's ground floor (local: x across, z out of the front; the door is at x = +1 on the front wall).
+// solid: [half-width, half-depth, height] for the things you cannot walk through
+export const TAVERN_ROOM = [
+  // the bar along the back, the barrels behind it
+  { piece: 'Table_Large', lx: -1.6, lz: -2.9, rot: 0, solid: [1.42, 0.55, 1] },
+  { piece: 'Table_Large', lx: 1.3, lz: -2.9, rot: 0, solid: [1.42, 0.55, 1] },
+  { piece: 'Barrel_Holder', lx: -2.6, lz: -4.45, rot: 0, solid: [0.7, 0.4, 1.3] },
+  { piece: 'Barrel_Holder', lx: -0.7, lz: -4.45, rot: 0, solid: [0.7, 0.4, 1.3] },
+  { piece: 'Barrel', lx: 0.9, lz: -4.5, rot: 0, solid: [0.35, 0.35, 0.9] },
+  { piece: 'Mug', lx: -1.9, lz: -2.8, ly: 0.81, rot: 0.4 }, { piece: 'Mug', lx: -1.2, lz: -3.0, ly: 0.81, rot: 2 },
+  { piece: 'Bottle_1', lx: 1.8, lz: -3.1, ly: 0.81, rot: 0 }, { piece: 'CandleStick_Triple', lx: 0.4, lz: -3.0, ly: 0.81, rot: 0 },
+  // two tables with benches, one with stools
+  { piece: 'Table_Large', lx: -2.3, lz: 0.6, rot: Math.PI / 2, solid: [0.55, 1.42, 1] },
+  { piece: 'Bench', lx: -3.15, lz: 0.6, rot: Math.PI / 2, solid: [0.27, 1.39, 0.55] },
+  { piece: 'Bench', lx: -1.45, lz: 0.6, rot: Math.PI / 2, solid: [0.27, 1.39, 0.55] },
+  { piece: 'Mug', lx: -2.4, lz: 1.1, ly: 0.81, rot: 1 }, { piece: 'Table_Plate', lx: -2.2, lz: 0.1, ly: 0.81, rot: 0 },
+  { piece: 'Table_Large', lx: 1.9, lz: 1.8, rot: 0, solid: [1.42, 0.55, 1] },
+  { piece: 'Stool', lx: 1.0, lz: 2.6, rot: 0 }, { piece: 'Stool', lx: 2.8, lz: 2.6, rot: 0.6 }, { piece: 'Stool', lx: 2.0, lz: 1.0, rot: 0.3 },
+  { piece: 'Mug', lx: 1.6, lz: 1.9, ly: 0.81, rot: 0 }, { piece: 'Candle_1', lx: 2.3, lz: 1.7, ly: 0.81, rot: 0 },
+  // the bed the tavern lets, in the back corner, and its nightstand
+  { piece: 'Bed_Twin1', lx: 3.0, lz: -3.6, rot: 0, solid: [0.94, 1.21, 0.8], bed: true },
+  { piece: 'Nightstand_Shelf', lx: 1.75, lz: -4.55, rot: 0, solid: [0.35, 0.2, 1.2] },
+  // light: the chandelier, a lantern by the door
+  { piece: 'Chandelier', lx: 0, lz: 0, ly: 3.1, rot: 0 },
+  { piece: 'Lantern_Wall', lx: -3.85, lz: 3.0, ly: 0.6, rot: Math.PI / 2 },
+  { piece: 'Barrel_Apples', lx: -3.5, lz: -1.6, rot: 0, solid: [0.35, 0.35, 0.9] },
+  { piece: 'Crate_Wooden', lx: 3.4, lz: 4.3, rot: 0.2, solid: [0.45, 0.45, 0.9] },
+];
+// from local (house) coordinates to the world
+export function toWorld(b, lx, lz) {
+  const c = Math.cos(b.yaw), s = Math.sin(b.yaw);
+  return [b.x + lx * c + lz * s, b.z - lx * s + lz * c];
+}
+export function tavern() { return buildings().find((b) => b.kind === 'tavern'); }
 
 // ── trees and bushes ───────────────────────────────────────────────────────
 // woodland: the map's deciduous woods to the west, wet woods east and south-east, pines on the ridge

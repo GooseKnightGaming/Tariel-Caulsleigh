@@ -54,4 +54,6 @@ save(ranger, 'ranger_green', 1024)
 save(rehue(ranger, lambda h, s, v: 0.17 < h < 0.48 and s > 0.15, lambda h, s, v: (h + 0.32, s * 0.9, v * 0.85)), 'ranger_blue', 1024)
 save(Image.open(f'{outfits}/Ranger/T_Ranger_3_BaseColor.png'), 'ranger_brown', 1024)
 save(Image.open(f'{outfits}/Peasant/T_Peasant_2_BaseColor.png'), 'peasant', 1024)
+# Thiah's "posh rags": the first, lighter Peasant
+save(Image.open(f'{outfits}/Peasant/T_Peasant_BaseColor.png'), 'peasant_light', 1024)
 print('textures written to', out)

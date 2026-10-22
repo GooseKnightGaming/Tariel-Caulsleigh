@@ -4,6 +4,7 @@
 
 export const CAST = {
   tariel: { name: 'Tariel', model: 'Tariel' },
+  thiah: { name: 'Thiah', model: 'Thiah' },
   caulsleigh: { name: 'Lord Caulsleigh', model: 'Caulsleigh' },
   siofel: { name: 'First Sergeant Síofel', model: 'Siofel' },
   rider: { name: 'A rider', model: 'Rider' },
