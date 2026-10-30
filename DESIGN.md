@@ -140,6 +140,7 @@ notes already require.
 - **PlayCanvas, in the browser**, like Frontline — runs on a Chromebook; no install.
 - **Terrain from the Azgaar export**: heights, biomes, rivers and settlements read from Rhys's map file
   and turned into 3D ground, forest, water and roads.
+- **Art drawn in code where possible** (Rhys, 30 Oct 2026): he would rather the game be genuinely his than built from other people's packs. Stanlech's townsfolk are the first, drawn in code (`src/game/figure.js`); Tariel, Thiah and the opening's cast are still built from CC0 packs and can be redrawn later.
 - **GitHub Pages**: https://gooseknightgaming.github.io/Tariel-Caulsleigh/ — every playable build is
   pushed there, with a version number (T0.1, T0.2, …) for Rhys to playtest against.
 
@@ -152,7 +153,7 @@ notes already require.
    (Q); a pause menu; the rider on horseback; the bridge walkable.
    **T0.1.2** (built) — debug line; doors (E); traits (K) and gear & bag (I) in the pause menu; the Mark of Kern
    (Rhys's design: the triple spiral in its arc, on the left foot); Thiah's legs; the rider astride.
-2. **T0.2** — Stanlech: the bridge, the river, the tavern, the market, houses; townsfolk on routines.
+2. **T0.2** (built, first pass) — Stanlech alive: ten townsfolk (keeper, guards, stallholders, villagers) on daily routines by the clock, finding their own way round the town, drawn in code. Still to come: their names, faces, clothes and real schedules (Rhys), market stalls, and speech (T0.3).
 3. **T0.3** — conversation; Elar; the Thiah / Tariel switch.
 4. **T0.4** — combat (fists, sword, bow); the bar fight.
 5. **T0.5** — the Trenite clock and the Punk mystery; the third night.

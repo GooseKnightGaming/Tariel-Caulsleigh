@@ -12,8 +12,9 @@ import { RegionMap } from './map.js';
 import { buildVillage, DOORS, updateDoors } from './village.js';
 import { OPEN, doors, blocked, clearTo } from '../world/solids.js';
 import * as CH from '../sim/character.js';
+import { Town } from './townsfolk.js';
 
-const VERSION = 'T0.1.2';
+const VERSION = 'T0.2';
 const TEST = /[?&]test/.test(location.search);
 const $ = (id) => document.getElementById(id);
 
@@ -45,7 +46,7 @@ app.root.addChild(light);
 const clock = new Clock();
 const map = new RegionMap();
 const cam = { yaw: 0, pitch: 0.18, dist: 5.2, want: 5.2 };
-let walker = null, tariel = null, sky = null, river = null;
+let walker = null, tariel = null, sky = null, river = null, town = null;
 let tavernLight = null;
 const selves = { tariel: null, thiah: null };     // Tariel, and Thiah Kirdotr: the one you are now is `tariel`
 let who = 'tariel', horse = null, nights = 0, paused = false;
@@ -91,6 +92,11 @@ async function makeWorld() {
   if (selves.thiah) selves.thiah.visible = false;
   const hb = await loadBody(pc, app, 'Horse').catch(() => null);
   if (hb) { horse = new Actor(pc, app, hb, { name: 'horse', height: 2.35, clips: HORSE, paces: { walk: 1.8, jog: 8 } }); horse.visible = false; }
+  // the people of Stanlech, drawn in code, living their days by the clock
+  town = new Town(pc, app);
+  const tf = performance.now();
+  await town.build(frame, say, clock.hour);
+  console.log('[tariel] the people ready in', Math.round(performance.now() - tf), 'ms');
   map.draw();
   console.log('[tariel] world ready in', Math.round(performance.now() - t0), 'ms');
 }
@@ -333,6 +339,7 @@ function act() {
   setTimeout(() => {
     if (clock.hour >= 18) clock.day++;
     clock.hour = 7;
+    if (town) town.snap(clock.hour);
     nights++;
     setTimeout(() => {
       $('fade').classList.remove('on'); setTimeout(() => $('fade').classList.remove('long'), 1500);
@@ -418,7 +425,7 @@ function debugLine(dt) {
   const fps = dbgFrames / Math.max(0.001, dbgMs / 1000); dbgFrames = 0; dbgMs = 0;
   const p = walker.pos, rc = W.riverCoords(p[0], p[2]), st = app.stats;
   el.classList.remove('gone');
-  el.textContent = `${VERSION} | ${fps.toFixed(0)} fps | ${st.drawCalls ? st.drawCalls.total : '?'} draws | pos ${p[0].toFixed(1)}, ${p[1].toFixed(1)}, ${p[2].toFixed(1)} | river s ${rc.s.toFixed(0)} n ${rc.n.toFixed(0)} | ${walker.side()} | ${who} | ${walker.gait} ${walker.speed.toFixed(1)} m/s | stamina ${Math.round(walker.stamina)}/${Math.round(walker.staminaMax)} | day ${clock.day} ${clock.hour.toFixed(2)} h | nights ${nights} | ${mode}${paused ? ' (paused)' : ''}`;
+  el.textContent = `${VERSION} | ${fps.toFixed(0)} fps | ${st.drawCalls ? st.drawCalls.total : '?'} draws | pos ${p[0].toFixed(1)}, ${p[1].toFixed(1)}, ${p[2].toFixed(1)} | river s ${rc.s.toFixed(0)} n ${rc.n.toFixed(0)} | ${walker.side()} | ${who} | ${walker.gait} ${walker.speed.toFixed(1)} m/s | stamina ${Math.round(walker.stamina)}/${Math.round(walker.staminaMax)} | day ${clock.day} ${clock.hour.toFixed(2)} h | nights ${nights} | folk ${town ? town.summary() : '-'} | ${mode}${paused ? ' (paused)' : ''}`;
 }
 
 // ── every frame ───────────────────────────────────────────────────────────
@@ -450,6 +457,7 @@ app.on('update', (dt) => {
   }
   if (horse && horse.visible) horse.update(dt);
   for (const k in cast) if (cast[k].visible) cast[k].update(dt);
+  if (town) { if (clock.scale > 1) town.snap(clock.hour); else town.update(dt, clock.hour); }   // hurried time: they keep up by jumping
   if (mode === 'free') nearby();
   updateDoors(dt);
   debugLine(dt);
@@ -533,4 +541,4 @@ pauseWiring(); applySettings();
 })();
 
 // for testing, and for curiosity
-window.TARIEL = { get horse() { return horse; }, get paused() { return paused; }, selves, camera, opening, skip: () => { startOpening(); step = SCRIPT.length - 2; waiting = false; next(); }, app, pc, W, get walker() { return walker; }, clock, map, cam, cast, get tariel() { return tariel; }, get mode() { return mode; }, next, VERSION };
+window.TARIEL = { get horse() { return horse; }, get paused() { return paused; }, selves, camera, opening, skip: () => { startOpening(); step = SCRIPT.length - 2; waiting = false; next(); }, app, pc, W, get walker() { return walker; }, clock, map, cam, cast, get tariel() { return tariel; }, get mode() { return mode; }, get town() { return town; }, next, VERSION };

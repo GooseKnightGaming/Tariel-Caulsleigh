@@ -24,6 +24,8 @@ and Thiah Kirðotr (barefoot, posh rags, hair loose). **Esc** pauses (controls, 
 the hill on horseback. Walls, the well and tree trunks are solid; the camera stays in front of walls; the
 bridge can be walked.
 
+**T0.2** — Stanlech alive (first pass): ten townsfolk live a day by the clock. A keeper at the tavern, two guards on the day watch, three stallholders round the well and four villagers, from both banks; each wakes, goes to work, and most drink at the tavern of an evening before going home to bed (they go indoors at their own door and come out again). They find their own way round houses, trees and the river, over the bridge and through the tavern's door. They are **drawn entirely in code** (`src/game/figure.js`: painted low-poly bodies like the houses, walked and posed by `src/sim/gait.js`), with no asset packs; Tariel, Thiah and the others in the opening are still the pack-built models for now. The routines and routes are in `src/sim/townsfolk.js`, and the people are placeholders (names, faces, clothes and schedules are for Rhys to set). The debug line (**F3**) shows how many are out and walking.
+
 **T0.1.2** — Rhys's second playtest: a debug line (**F3**); doors shut by default, **E** opens and closes them
 (the tavern's stands open); a Character page (**K**: traits to put points into - Strength, Agility, Endurance,
 Wits, Presence; a first draft) and a Gear & bag page (**I**); Thiah's lower legs, and the Mark of Kern on her left

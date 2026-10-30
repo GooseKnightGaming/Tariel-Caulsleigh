@@ -2,6 +2,8 @@
 import * as W from '../src/world/world.js';
 import { Walker, groundAt, tooDeep, bridgeAt } from '../src/sim/walker.js';
 import { Clock, sunDir, skyAt, daylight } from '../src/sim/sky.js';
+import { makeFolk, plan, route, dayMoves, walkable, inTavern, tavernGate, ROLES } from '../src/sim/townsfolk.js';
+import { gaitAngles, POSES } from '../src/sim/gait.js';
 
 let pass = 0, fail = 0;
 const ok = (c, msg) => { if (c) pass++; else { fail++; console.log('FAIL', msg); } };
@@ -135,6 +137,59 @@ ok(!tooDeep(mid[0], mid[1]), 'the bridge can be walked');
   const back = CH.load(CH.save(c));
   ok(back.traits.agility === 2 && back.points === c.points, 'traits are kept');
 }
+
+// the people of Stanlech
+const folk = makeFolk();
+ok(folk.length === ROLES.length && folk.every((p, i) => p.id === i), 'ten people, in order');
+ok(JSON.stringify(makeFolk()) === JSON.stringify(folk), 'the same people every time');
+ok(folk.every((p) => walkable(p.mouth[0], p.mouth[1], 0.3) && walkable(p.tavernSpot[0], p.tavernSpot[1], 0.3) && p.work.length > 0 && p.work.every((w) => walkable(w.spot[0], w.spot[1], 0.3))), 'everyone\'s door, tavern seat and workplaces are standable');
+ok(folk.every((p) => inTavern(p.tavernSpot[0], p.tavernSpot[1])) && !inTavern(...folk[0].mouth), 'tavern seats are inside, doors outside');
+ok(folk.some((p) => p.bank === 'cawel') && folk.some((p) => p.bank === 'szetter'), 'people live on both banks');
+// where the hour wants them
+const keeper = folk[0], guard = folk[1], stall = folk[3];
+ok(plan(keeper, 23).where === 'work' && plan(keeper, 4).where === 'home' && plan(keeper, 12).where === 'work', 'the keeper works from ten till one');
+ok(plan(guard, 3).where === 'home' && plan(guard, 12).where === 'work' && plan(guard, 22).where === 'home', 'a guard keeps the day watch');
+ok(plan(stall, 3).where === 'home' && plan(stall, 12).where === 'work', 'the stalls open by day');
+ok(plan(stall, 12).key === plan(stall, 12.5).key, 'a place is held for the hour');
+ok(plan(guard, 27).where === plan(guard, 3).where && plan(guard, -2).where === plan(guard, 22).where, 'hours wrap round the day');
+ok(folk.some((p) => plan(p, 20).where === 'tavern'), 'someone is at the tavern of an evening');
+// every move of a day has a route, clear of walls, and quick enough
+let moves = 0, slow = 0, blockedLegs = 0, noRoute = 0;
+for (const p of folk) for (const [a, b] of dayMoves(p)) {
+  moves++;
+  const t0 = Date.now(), r = route(a, b); slow = Math.max(slow, Date.now() - t0);
+  if (!r) { noRoute++; continue; }
+  let prev = a;
+  for (const q of r) {
+    const d = Math.hypot(q[0] - prev[0], q[1] - prev[1]), k = Math.max(1, Math.ceil(d / 0.05));
+    for (let j = 1; j <= k; j++) if (!walkable(prev[0] + (q[0] - prev[0]) * j / k, prev[1] + (q[1] - prev[1]) * j / k, 0.2)) { blockedLegs++; break; }
+    prev = q;
+  }
+}
+ok(moves > 30, 'a day has moves in it (' + moves + ')');
+ok(noRoute === 0, 'every move has a route');
+ok(blockedLegs === 0, 'no route goes through a wall, a tree or the deep water');
+ok(slow < 1500, 'the slowest route took ' + slow + ' ms');
+const gate = tavernGate();
+ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the tavern door has an inside and an outside');
+// people from the far bank cross by the bridge, not the river
+{
+  const p = folk.find((q) => q.bank === 'szetter'), r = route(p.mouth, folk[0].mouth);
+  ok(r && r.every((q) => !(W.waterAt(q[0], q[1]) !== null && Math.abs(W.riverCoords(q[0], q[1]).s) > 8 && W.riverCoords(q[0], q[1]).n * W.riverCoords(q[0], q[1]).n < 64)), 'the far bank crosses where the bridge is');
+}
+// how a drawn person moves
+for (const pose of POSES) {
+  let widest = 0;
+  for (let ph = 0; ph < 7; ph += 0.5) for (const v of [0, 1.4, 4.6]) for (const t of [0, 1.7]) {
+    const g = gaitAngles(pose, ph, v, t);
+    for (const k in g) { ok(Number.isFinite(g[k]), 'gait ' + pose + ' ' + k + ' is a number'); }
+    widest = Math.max(widest, Math.abs(g.legL), Math.abs(g.armLx), Math.abs(g.armRx));
+  }
+  ok(widest < 80, 'gait ' + pose + ' stays inside the body');
+}
+{ const a = gaitAngles('idle', 1.2, 1.5, 0), b = gaitAngles('idle', 1.2 + Math.PI, 1.5, 0);
+  ok(a.legL * b.legL < 0 && a.legL * a.legR < 0, 'legs swing against each other; a half cycle later they swap'); }
+ok(gaitAngles('arms', 0, 0, 0).armLx > 40 && gaitAngles('idle', 0, 0, 0).armLx < 10, 'folded arms come forward, idle arms hang');
 
 // the sky
 ok(near(sunDir(6)[1], 0, 0.02) && near(sunDir(18)[1], 0, 0.02), 'sunrise and sunset on the horizon');
