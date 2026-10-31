@@ -13,7 +13,7 @@ import { buildVillage, DOORS, updateDoors } from './village.js';
 import { OPEN, doors, blocked, clearTo } from '../world/solids.js';
 import * as CH from '../sim/character.js';
 import { Town } from './townsfolk.js';
-import { Figure, THIAH } from './figure.js';
+import { Figure, THIAH, TARIEL } from './figure.js';
 
 const VERSION = 'T0.2';
 const TEST = /[?&]test/.test(location.search);
@@ -542,4 +542,4 @@ pauseWiring(); applySettings();
 })();
 
 // for testing, and for curiosity
-window.TARIEL = { get horse() { return horse; }, get paused() { return paused; }, selves, camera, opening, skip: () => { startOpening(); step = SCRIPT.length - 2; waiting = false; next(); }, app, pc, W, get walker() { return walker; }, clock, map, cam, cast, get tariel() { return tariel; }, get mode() { return mode; }, get town() { return town; }, Figure, THIAH, next, VERSION };
+window.TARIEL = { get horse() { return horse; }, get paused() { return paused; }, selves, camera, opening, skip: () => { startOpening(); step = SCRIPT.length - 2; waiting = false; next(); }, app, pc, W, get walker() { return walker; }, clock, map, cam, cast, get tariel() { return tariel; }, get mode() { return mode; }, get town() { return town; }, Figure, THIAH, TARIEL, next, VERSION };

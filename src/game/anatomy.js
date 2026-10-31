@@ -33,7 +33,7 @@ function tube(g, y0, y1, steps, n, P, col, o) {
 
 // how the torso is shaped (y, half-width, half-depth, centre z)
 function torsoProfile(L) {
-  const m = L.female ? 1 : 1.1, b = L.female ? 1 : 0;
+  const m = L.m || (L.female ? 1 : 1.1), b = L.female ? 1 : 0;
   return prof([[0.78, 0.165 * m, 0.115, 0], [0.92, 0.168 * m, 0.116, 0], [1.02, 0.128 * m, 0.094, 0], [1.12, 0.130 * m, 0.096 + 0.004 * (1 - b), 0],
     [1.22, 0.146 * m, 0.100 + 0.010 * (1 - b), -0.006 * (1 - b)], [1.31, 0.160 * m, 0.094, 0], [1.38, 0.178 * m, 0.082, 0], [1.425, 0.100, 0.060, 0]]);
 }
@@ -125,6 +125,24 @@ function buildHair(g, L, HY) {
     g.ellipsoid(0, HY - 0.15, 0.095, 0.125, 0.21, 0.056, shade, { lat: 6, lon: 10 });
     return;
   }
+  if (S === 'wavy') {                                                                              // shoulder-length waves, parted in the middle
+    E(g, -0.045, HY + 0.055, -0.098, 0.060, 0.050, 0.040, h, { lat: 5, lon: 10 });
+    E(g, 0.045, HY + 0.055, -0.098, 0.060, 0.050, 0.040, hl, { lat: 5, lon: 10 });
+    g.ellipsoid(0, 1.47, 0.07, 0.145, 0.165, 0.085, shade, { lat: 7, lon: 12 });
+    for (const sx of [-1, 1]) {
+      g.ellipsoid(sx * 0.108, 1.49, 0.020, 0.046, 0.150, 0.095, h, { lat: 6, lon: 8 });
+      g.ellipsoid(sx * 0.118, 1.385, 0.045, 0.046, 0.050, 0.080, hd, { lat: 4, lon: 8 });
+    }
+    if (L.wreath) {                                                                                // a laurel wreath: leaves around the brow
+      const leaf = [[0.30, 0.38, 0.14], [0.52, 0.50, 0.16], [0.40, 0.46, 0.15]];
+      for (let k = 0; k < 20; k++) {
+        const t = (k / 20) * Math.PI * 2, r = 0.103 * K;
+        g.ellipsoid(Math.sin(t) * r, HY0 + 0.072 * K + 0.004 * Math.sin(k * 2), -Math.cos(t) * r * 1.05, 0.036, 0.016, 0.024, leaf[k % 3], { lat: 3, lon: 6 });
+      }
+      g.loft([0, 1].map((i) => ring(0, HY0 + 0.070 * K + i * 0.012, 0.0, 0.101 * K, 0.108 * K, 24)), [0.26, 0.32, 0.14]);
+    }
+    return;
+  }
   // 'braid': a side-swept fringe, a long lock by one cheek, and a plait down the back
   E(g, 0.01, HY + 0.062, -0.082, 0.098, 0.052, 0.050, h, { lat: 5, lon: 10 });
   E(g, -0.052, HY + 0.040, -0.105, 0.040, 0.030, 0.026, hl, { lat: 4, lon: 8 });
@@ -139,6 +157,52 @@ function buildHair(g, L, HY) {
   g.ellipsoid(0, 0.915, 0.168, 0.026, 0.034, 0.024, h, { lat: 4, lon: 8 });
 }
 
+
+// Tariel: a padded quilted mantle over the shoulders, an open long coat, a sash with a cord and tassel, a pleated kilt
+function buildKit(g, L, T) {
+  const mant = [0.50, 0.42, 0.24], coat = L.coat, red = [0.55, 0.14, 0.10], tan = [0.74, 0.60, 0.32], lime = [0.66, 0.70, 0.22];
+  const bz = T(1.02)[1];
+  // crossed straps over the chest, lying on the curved front of the torso
+  const on = (x, y) => { const t = T(y), u = Math.min(0.97, Math.abs(x) / t[0]); return [x, y, t[2] - t[1] * Math.sqrt(1 - u * u) - 0.005]; };
+  for (const sx of [-1, 1]) for (let j = 0; j < 5; j++) {
+    const f0 = j / 5, f1 = (j + 1) / 5, xa = lerp(sx * 0.085, -sx * 0.07, f0), xb = lerp(sx * 0.085, -sx * 0.07, f1), ya = lerp(1.35, 1.07, f0), yb = lerp(1.35, 1.07, f1);
+    g.quad(on(xa - 0.012, ya), on(xa + 0.012, ya), on(xb + 0.012, yb), on(xb - 0.012, yb), tan);
+  }
+  // the pleated kilt under the coat, then the sash round the waist
+  const kilt = [], KS = 6;
+  for (let i = 0; i <= KS; i++) {
+    const y = lerp(1.0, 0.50, i / KS), r = 0.15 + 0.17 * (i / KS), row = [];
+    for (let k = 0; k < 40; k++) { const th = (k / 40) * Math.PI * 2, w = r * (1 + 0.07 * Math.sin(th * 14) * (i / KS)); row.push([Math.sin(th) * w, y, -Math.cos(th) * w * 0.92]); }
+    kilt.push(row);
+  }
+  g.loft(kilt, (x, y, z) => (Math.sin(Math.atan2(x, -z) * 14) > 0.5 ? [0.30, 0.25, 0.17] : [0.17, 0.15, 0.13]));
+  g.loft([0.945, 0.97, 1.0, 1.02].map((y, i) => ring(0, y, 0, T(1.02)[0] + 0.020 + (i % 3 ? 0.003 : 0), bz + 0.020 + (i % 3 ? 0.003 : 0), 32)), lime);
+  // the cord hanging at the front of the sash, ending in a tassel
+  for (let k = 0; k < 9; k++) g.ellipsoid(0.03, 0.94 - k * 0.048, -bz - 0.035, 0.026, 0.026, 0.020, k % 2 ? [0.55, 0.58, 0.18] : lime, { lat: 3, lon: 6 });
+  g.ellipsoid(0.03, 0.47, -bz - 0.035, 0.022, 0.050, 0.020, [0.50, 0.40, 0.18], { lat: 4, lon: 6 });
+  // the quilted shoulder mantle: padded cells, red trim
+  const quilt = (x, y, z) => { const q = Math.abs(Math.sin(x * 52)) * Math.abs(Math.sin((y + z * 0.4) * 52)); return mix(dark(mant, 0.62), mant, clamp01((q - 0.05) / 0.4)); };
+  g.ellipsoid(0, 1.335, 0.014, 0.225, 0.150, 0.130, quilt, { lat: 10, lon: 36, phi0: -0.78, phi1: 1.05, t0: 0.75, t1: Math.PI * 2 - 0.75, w: (ph) => 1 - 0.10 * Math.max(0, -ph) });
+  // the coat: open at the front, back long and swinging out, trimmed in red
+  const R = prof([[0.18, 0.43], [0.4, 0.37], [0.7, 0.28], [1.0, 0.205], [1.30, 0.195], [1.42, 0.185]]), rings = [], CS = 14, CN = 30, gap = 1.1;
+  for (let i = 0; i <= CS; i++) {
+    const row = [];
+    for (let k = 0; k < CN; k++) {
+      const th = gap + (Math.PI * 2 - 2 * gap) * (k / (CN - 1)), hem = 0.20 + 0.11 * Math.abs(Math.cos(th / 2)) + 0.03 * Math.sin(th * 4), top = 1.17 + 0.25 * Math.pow(Math.abs(Math.cos(th / 2)), 1.5), y = lerp(top, hem, i / CS);
+      const r = R(y)[0] * (1 + 0.05 * Math.sin(th * 6 + y * 5) * (1 - y / 1.42)) + 0.018;
+      row.push([Math.sin(th) * r * (1 + 0.22 * Math.max(0, 0.9 - y) * Math.abs(Math.sin(th))), y, -Math.cos(th) * r * 0.96]);
+    }
+    rings.push(row);
+  }
+  g.loft(rings, (x, y, z) => {
+    const th = Math.atan2(x, -z), a = th < 0 ? th + Math.PI * 2 : th, edge = Math.min(a - gap, Math.PI * 2 - gap - a);
+    const hemY = 0.20 + 0.11 * Math.abs(Math.cos(a / 2));
+    if (edge < 0.05 || y < hemY + 0.035) return red;
+    return mix(dark(coat, 0.78), coat, clamp01((y - 0.2) / 0.9));
+  }, { open: true });
+  g.ellipsoid(0, 1.44, 0.04, 0.108, 0.045, 0.100, dark(coat, 0.9), { lat: 4, lon: 14, t0: 0.9, t1: Math.PI * 2 - 0.9 });   // the standing collar
+}
+
 // the torso: skin at the neckline, bodice or tunic, belt, skirt, and the head on top of it all
 export function buildBody(L) {
   const g = new Geo().at(0, -HIP, 0, 0), sk = L.skin, T = torsoProfile(L), tun = L.tunic;
@@ -150,10 +214,11 @@ export function buildBody(L) {
       if (z < 0 && Math.abs(x) < 0.031 && y > 1.06 && y < 1.335 && L.laces) return leather;
       return mix(dark(tun, 0.88), tun, clamp01((y - 1.0) / 0.3));
     }
+    if (L.kit === 'tariel' && z < 0 && y > 1.27 + 1.9 * Math.abs(x)) return sk;
     if (y > 1.395) return sk;
     return tun;
   });
-  buildSkirt(g, L);
+  if (L.kit !== 'tariel') buildSkirt(g, L);
   // the belt, with a buckle at the front
   const bz = T(1.02)[1], bx = T(1.02)[0];
   g.loft([0.985, 0.995, 1.045, 1.055].map((y, i) => ring(0, y, 0, bx + (i % 3 ? 0.014 : 0.008), bz + (i % 3 ? 0.014 : 0.008), 32)), L.belt);
@@ -171,6 +236,7 @@ export function buildBody(L) {
     g.box(-0.052, 1.12, -T(1.2)[1] - 0.020, 0.052, 1.32, -T(1.2)[1] - 0.008, [0.82, 0.72, 0.34]);
     g.box(-0.012, 1.14, -T(1.2)[1] - 0.024, 0.012, 1.30, -T(1.2)[1] - 0.018, [0.55, 0.12, 0.10]);
   }
+  if (L.kit === 'tariel') buildKit(g, L, T);
   buildHead(g, L);
   if (L.extra === 'hat') {                                                                         // a stallholder's wide straw hat
     const brim = [[1.722, 0.20], [1.734, 0.19], [1.738, 0.13]].map(([y, r]) => ring(0, y, 0, r, r, 18));
@@ -199,8 +265,9 @@ export function buildArm(L, right) {
 // the forearm, hanging from the elbow, with the hand
 export function buildFore(L, right) {
   const g = new Geo().at(0, 0, 0, 0), sk = L.skin;
-  tube(g, 0.005, -0.235, 4, 10, (y) => [lerp(0.043, 0.031, clamp01(-y / 0.235))], (x, y) => (!L.puff && L.longSleeve && y > -0.17) ? L.sleeve : sk);
-  g.ellipsoid(0, -0.285, -0.004, 0.027, 0.050, 0.020, dark(sk, 1.0), { lat: 5, lon: 8 });             // the hand
+  tube(g, 0.005, -0.235, 4, 10, (y) => [lerp(0.043, 0.031, clamp01(-y / 0.235))], (x, y) => L.glove ? (y < -0.115 ? L.glove : L.sleeve) : (!L.puff && L.longSleeve && y > -0.17) ? L.sleeve : sk);
+  g.ellipsoid(0, -0.285, -0.004, 0.027, 0.050, 0.020, L.glove || sk, { lat: 5, lon: 8 });              // the hand
+  if (L.glove) for (let k = 0; k < 4; k++) g.ellipsoid(-0.018 + k * 0.012, -0.325, -0.016, 0.006, 0.011, 0.007, [0.82, 0.83, 0.86], { lat: 3, lon: 5 });   // silver knuckle-guards
   g.ellipsoid(-0.018 * (right ? -1 : 1), -0.268, -0.014, 0.008, 0.022, 0.009, sk, { lat: 3, lon: 6 });  // the thumb
   if (right && L.extra === 'guard') {                                                                 // a spear, held upright beside her
     g.cyl(0.016, 0.016, -0.62, 1.28, 6, [0.46, 0.34, 0.20]);
@@ -217,9 +284,9 @@ export function buildThigh(L) {
 export function buildShin(L) {
   const g = new Geo().at(0, 0, 0, 0), len = HIP - THIGH - ANKLE;
   const boots = !L.barefoot && !(L.dress && !L.boots);
-  tube(g, 0.012, -len, 6, 10, (y) => { const t = clamp01(-y / len); return [boots && y < -0.14 ? lerp(0.060, 0.050, t) : lerp(0.058, 0.036, t)]; },
-    (x, y) => (boots && y < -0.12) ? L.bootCol : (L.dress ? L.skin : L.trousers));
-  const foot = boots ? L.bootCol : L.skin;
+  tube(g, 0.012, -len, 6, 10, (y) => { const t = clamp01(-y / len); return [L.tall ? lerp(0.066, 0.058, t) : boots && y < -0.14 ? lerp(0.060, 0.050, t) : lerp(0.058, 0.036, t)]; },
+    (x, y) => L.tall ? (Math.sin(Math.atan2(x, 0.0001 - 0) * 9) > 0.55 ? dark(L.bootCol, 1.4) : L.bootCol) : (boots && y < -0.12) ? L.bootCol : (L.dress ? L.skin : L.trousers));
+  const foot = L.shoe || (boots ? L.bootCol : L.skin);
   g.ellipsoid(0, -len - 0.024, -0.050, 0.044, 0.032, 0.105, foot, { lat: 4, lon: 10 });
   if (!boots) g.ellipsoid(0, -len - 0.030, -0.130, 0.036, 0.016, 0.030, dark(L.skin, 0.96), { lat: 3, lon: 8 });   // the toes
   return g;

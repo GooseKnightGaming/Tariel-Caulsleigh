@@ -18,11 +18,15 @@ const frac = (x) => x - Math.floor(x);
 // green eyes, a laced red bodice with puffed off-the-shoulder sleeves, a draped overskirt, bare feet
 export const THIAH = { id: 90, role: 'thiah', name: 'Thiah', height: 1.52, tint: [0.50, 0.13, 0.11], seed: 0.9 };
 
+// Tariel, drawn from Rhys's HeroForge reference: a laurel wreath, shoulder-length golden waves, a quilted shoulder mantle,
+// a long olive coat trimmed in red, crossed straps, a lime sash with a tassel, a pleated kilt, tall boots, studded gloves
+export const TARIEL = { id: 91, role: 'tariel', name: 'Tariel', height: 1.62, tint: [0.19, 0.26, 0.16], seed: 0.3 };
+
 // what someone looks like, from who they are (deterministic: the same person is always the same person)
 export function lookOf(p) {
   const h = (n) => frac(Math.sin((p.id + 1) * 12.9898 + n * 78.233) * 43758.5453);
   const pick = (a, n) => a[Math.floor(h(n) * a.length)];
-  const female = p.role === 'thiah' ? true : p.role === 'keeper' ? false : p.role === 'guard' ? p.id % 2 === 0 : h(6) < 0.55;
+  const female = p.role === 'thiah' ? true : p.role === 'tariel' ? false : p.role === 'keeper' ? false : p.role === 'guard' ? p.id % 2 === 0 : h(6) < 0.55;
   const L = {
     skin: pick(SKIN, 1), hair: pick(HAIR, 2), eyes: pick(EYES, 7), style: female ? (h(3) < 0.5 ? 'braid' : 'long') : (h(3) < 0.5 ? 'short' : 'cap'),
     tunic: p.tint, trousers: pick(TROUSERS, 4), bootCol: [0.20, 0.14, 0.10], extra: null, height: p.height, female, dress: female,
@@ -33,6 +37,11 @@ export function lookOf(p) {
   if (p.role === 'thiah') {
     Object.assign(L, { skin: [0.97, 0.80, 0.70], hair: [0.92, 0.82, 0.30], eyes: [0.30, 0.62, 0.34], style: 'braid', tunic: [0.50, 0.13, 0.11],
       skirt: [0.42, 0.10, 0.09], over: [0.53, 0.14, 0.11], sleeve: [0.52, 0.14, 0.11], belt: [0.27, 0.22, 0.19], barefoot: true, laces: true, puff: true, width: 1.0 });
+  }
+  if (p.role === 'tariel') {
+    Object.assign(L, { skin: [0.97, 0.80, 0.70], hair: [0.94, 0.86, 0.30], eyes: [0.28, 0.62, 0.40], style: 'wavy', wreath: true, kit: 'tariel', m: 0.97, width: 0.96,
+      tunic: [0.17, 0.23, 0.15], sleeve: [0.19, 0.26, 0.16], skirt: [0.17, 0.15, 0.13], coat: [0.50, 0.53, 0.20], glove: [0.26, 0.19, 0.15], trousers: [0.14, 0.15, 0.12],
+      bootCol: [0.16, 0.21, 0.15], shoe: [0.60, 0.66, 0.20], tall: true, belt: [0.24, 0.22, 0.20], dress: false, puff: false, laces: false, longSleeve: true, boots: true, over: null });
   }
   if (p.role === 'guard') { L.extra = 'guard'; L.style = 'helmet'; L.tunic = [0.40, 0.14, 0.12]; L.sleeve = L.tunic; L.skirt = L.tunic; L.dress = false; L.puff = false; L.laces = false; L.longSleeve = true; L.boots = true; L.over = null; }
   else if (p.role === 'keeper') { L.extra = 'apron'; L.style = 'bald'; L.hair = [0.62, 0.62, 0.60]; L.width = 1.12; L.dress = false; L.puff = false; L.laces = false; L.longSleeve = true; L.boots = true; }
@@ -77,7 +86,7 @@ export class Figure {
     this.legR = joint('legR', 0.095, HIP, this.root); part('leg', parts.legR, this.legR);
     this.shinL = joint('shinL', 0, -THIGH, this.legL); part('shin', parts.shinL, this.shinL);
     this.shinR = joint('shinR', 0, -THIGH, this.legR); part('shin', parts.shinR, this.shinR);
-    this.stride = L.dress ? 0.55 : 1;                                   // a long skirt keeps the steps short
+    this.stride = L.dress ? 0.55 : L.kit ? 0.75 : 1;                                   // a long skirt keeps the steps short
     this.pos = [0, 0, 0]; this.yaw = 0; this.wantYaw = 0; this.path = null; this.speed = 0; this.pose = 'idle';
     this.phase = p.seed * 6; this.t = p.seed * 50; this.onArrive = null; this.moving = 0;
     this.ang = gaitAngles('idle', 0, 0, 0);
