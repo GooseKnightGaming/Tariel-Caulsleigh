@@ -14,7 +14,7 @@ export function gaitAngles(pose, phase, speed, t) {
   const walk = Math.min(1, speed / 0.5);                              // 0 standing, 1 walking properly
   const breath = Math.sin(t * 1.4);
   // standing: arms by the pose
-  let aLx = 3 * breath, aLz = 2, aRx = -3 * breath, aRz = -2, fL = 7, fR = 7;
+  let aLx = 3 * breath, aLz = 4, aRx = -3 * breath, aRz = -4, fL = 10, fR = 10;
   if (pose === 'arms') { aLx = 46 + 2 * breath; aLz = 16; aRx = 50 + 2 * breath; aRz = -16; fL = 70; fR = 72; }
   else if (pose === 'talk') { aLx = 18 + 6 * Math.sin(t * 1.9); aLz = 6; aRx = 30 + 12 * Math.sin(t * 2.6); aRz = -12; fR = 60 + 22 * Math.sin(t * 2.6); fL = 25; o.sway = 4 * Math.sin(t * 0.9); }
   // walking: legs and arms swing against each other, faster strides swing wider

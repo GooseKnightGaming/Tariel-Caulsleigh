@@ -54,8 +54,8 @@ function buildSkirt(g, L) {
     rings.push(row);
   }
   const base = L.skirt, hemc = L.hemTrim;
-  g.loft(rings, (x, y) => {
-    let c = mix(base, dark(base, 0.8), clamp01((1.03 - y) / 0.95));
+  g.loft(rings, (x, y, z) => {
+    let c = mix(base, dark(base, 0.8), clamp01((1.03 - y) / 0.95)); c = dark(c, 1 + 0.08 * Math.sin(Math.atan2(x, -z) * 7 + y * 4));
     if (hemc && y < hem + 0.025) c = hemc;
     return c;
   });
@@ -65,12 +65,12 @@ function buildSkirt(g, L) {
       const row = [];
       for (let k = 0; k < ON; k++) {
         const th = (k / ON) * Math.PI * 2;
-        const hemY = 0.50 + 0.15 * Math.cos(th - 2.3) + 0.05 * Math.sin(th * 3 + 0.7), y = lerp(1.0, hemY, i / OS), r = R(y)[0] * skirtWobble(th, y, 0.09) + 0.012 + 0.03 * (i / OS);
+        const hemY = 0.50 + 0.15 * Math.cos(th - 2.3) + 0.07 * Math.sin(th * 4 + 0.7), y = lerp(1.0, hemY, i / OS), r = R(y)[0] * skirtWobble(th, y, 0.09) + 0.012 + 0.03 * (i / OS);
         row.push([Math.sin(th) * r, y, -Math.cos(th) * r * 0.93]);
       }
       O.push(row);
     }
-    g.loft(O, (x, y) => mix(L.over, dark(L.over, 0.72), clamp01((1.0 - y) / 0.5) * 0.7));
+    g.loft(O, (x, y, z) => dark(mix(L.over, dark(L.over, 0.72), clamp01((1.0 - y) / 0.5) * 0.7), 1 + 0.14 * Math.sin(Math.atan2(x, -z) * 9 + y * 7)));
   }
 }
 
@@ -83,7 +83,7 @@ function buildHead(g, L) {
   // neck
   tube(g, 1.40, 1.53, 3, 10, () => [0.047, 0.047, 0.004], dark(sk, 0.93));
   // head: a rounded skull with a narrower jaw
-  E(g, 0, HY, -0.004, 0.103, 0.126, 0.113, (x, y) => mix(sk, [0.96, 0.62, 0.55], clamp01((0.045 - Math.hypot(x + 0, 0)) * 0) * 0), { lat: 9, lon: 14, w: (ph) => (ph < 0 ? 1 - 0.20 * Math.pow(-ph / (Math.PI / 2), 1.3) : 1) });
+  E(g, 0, HY, -0.004, 0.103, 0.126, 0.113, (x, y, z) => mix(sk, [0.96, 0.56, 0.50], z < -0.04 ? 0.38 * clamp01(1 - Math.hypot(Math.abs(x) - 0.062, (y - (HY - 0.034)) * 1.4) / 0.04) : 0), { lat: 9, lon: 14, w: (ph) => (ph < 0 ? 1 - 0.20 * Math.pow(-ph / (Math.PI / 2), 1.3) : 1) });
   E(g, -0.103, HY - 0.012, 0.0, 0.014, 0.026, 0.016, skd, { lat: 4, lon: 6 });      // ears
   E(g, 0.103, HY - 0.012, 0.0, 0.014, 0.026, 0.016, skd, { lat: 4, lon: 6 });
   E(g, 0, HY - 0.020, -0.111, 0.014, 0.020, 0.016, dark(sk, 0.96), { lat: 4, lon: 7 });  // nose
@@ -93,6 +93,7 @@ function buildHead(g, L) {
     E(g, sx * 0.040, HY + 0.004, -0.101, 0.0225, 0.0155, 0.01, [0.96, 0.95, 0.93], { lat: 4, lon: 8 });     // eye white
     E(g, sx * 0.040, HY + 0.004, -0.108, 0.0125, 0.0125, 0.006, L.eyes, { lat: 4, lon: 8 });                 // iris
     E(g, sx * 0.040, HY + 0.004, -0.1125, 0.0058, 0.0058, 0.004, [0.05, 0.05, 0.06], { lat: 3, lon: 6 });    // pupil
+    E(g, sx * 0.040, HY + 0.0165, -0.1015, 0.026, 0.0045, 0.008, [0.20, 0.14, 0.10], { lat: 3, lon: 8 });                       // lashes
     E(g, sx * 0.040, HY + 0.026, -0.098, 0.026, 0.0065, 0.008, dark(L.hair, L.hair[0] > 0.8 ? 0.8 : 1), { lat: 3, lon: 8 });  // brow
   }
   buildHair(g, L, HY);
@@ -128,10 +129,13 @@ function buildHair(g, L, HY) {
   if (S === 'wavy') {                                                                              // shoulder-length waves, parted in the middle
     E(g, -0.045, HY + 0.055, -0.098, 0.060, 0.050, 0.040, h, { lat: 5, lon: 10 });
     E(g, 0.045, HY + 0.055, -0.098, 0.060, 0.050, 0.040, hl, { lat: 5, lon: 10 });
-    g.ellipsoid(0, 1.47, 0.07, 0.145, 0.165, 0.085, shade, { lat: 7, lon: 12 });
-    for (const sx of [-1, 1]) {
-      g.ellipsoid(sx * 0.108, 1.49, 0.020, 0.046, 0.150, 0.095, h, { lat: 6, lon: 8 });
-      g.ellipsoid(sx * 0.118, 1.385, 0.045, 0.046, 0.050, 0.080, hd, { lat: 4, lon: 8 });
+    for (let k = 0; k < 5; k++) {                                                                  // the back: clumps flowing down to the shoulders
+      const t = k / 4, w = lerp(0.115, 0.150, t) + (k % 2 ? 0.008 : -0.004);
+      g.ellipsoid((k % 2 ? 0.012 : -0.012), lerp(1.58, 1.38, t), lerp(0.060, 0.095, t), w, 0.075, 0.062, k % 2 ? hd : shade, { lat: 5, lon: 12 });
+    }
+    for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) {                                        // the sides: waves framing the face
+      const t = k / 3, x = sx * (0.106 + (k % 2 ? 0.020 : 0.006) + 0.016 * t), y = lerp(1.545, 1.375, t), z = lerp(-0.005, 0.045, t);
+      g.ellipsoid(x, y, z, 0.040, 0.062, 0.070, k % 2 ? h : hd, { lat: 5, lon: 8 });
     }
     if (L.wreath) {                                                                                // a laurel wreath: leaves around the brow
       const leaf = [[0.30, 0.38, 0.14], [0.52, 0.50, 0.16], [0.40, 0.46, 0.15]];
@@ -146,6 +150,7 @@ function buildHair(g, L, HY) {
   // 'braid': a side-swept fringe, a long lock by one cheek, and a plait down the back
   E(g, 0.01, HY + 0.062, -0.082, 0.098, 0.052, 0.050, h, { lat: 5, lon: 10 });
   E(g, -0.052, HY + 0.040, -0.105, 0.040, 0.030, 0.026, hl, { lat: 4, lon: 8 });
+  E(g, -0.078, HY - 0.004, -0.088, 0.024, 0.062, 0.030, h, { lat: 4, lon: 8 });                  // the sweep of fringe over her cheek
   E(g, -0.100, HY - 0.040, 0.012, 0.018, 0.080, 0.058, h, { lat: 5, lon: 8 });           // the lock at her left cheek
   E(g, 0.100, HY - 0.035, 0.016, 0.018, 0.070, 0.058, h, { lat: 5, lon: 8 });
   const tie = [0.30, 0.22, 0.16];
@@ -181,24 +186,24 @@ function buildKit(g, L, T) {
   for (let k = 0; k < 9; k++) g.ellipsoid(0.03, 0.94 - k * 0.048, -bz - 0.035, 0.026, 0.026, 0.020, k % 2 ? [0.55, 0.58, 0.18] : lime, { lat: 3, lon: 6 });
   g.ellipsoid(0.03, 0.47, -bz - 0.035, 0.022, 0.050, 0.020, [0.50, 0.40, 0.18], { lat: 4, lon: 6 });
   // the quilted shoulder mantle: padded cells, red trim
-  const quilt = (x, y, z) => { const q = Math.abs(Math.sin(x * 52)) * Math.abs(Math.sin((y + z * 0.4) * 52)); return mix(dark(mant, 0.62), mant, clamp01((q - 0.05) / 0.4)); };
-  g.ellipsoid(0, 1.335, 0.014, 0.225, 0.150, 0.130, quilt, { lat: 10, lon: 36, phi0: -0.78, phi1: 1.05, t0: 0.75, t1: Math.PI * 2 - 0.75, w: (ph) => 1 - 0.10 * Math.max(0, -ph) });
+  const quilt = (x, y, z) => { const q = Math.abs(Math.sin(x * 40)) * Math.abs(Math.sin((y + z * 0.4) * 40)); return mix(dark(mant, 0.62), mant, clamp01((q - 0.05) / 0.4)); };
+  g.ellipsoid(0, 1.335, 0.014, 0.238, 0.150, 0.135, quilt, { lat: 12, lon: 56, phi0: -0.78, phi1: 1.05, t0: 0.75, t1: Math.PI * 2 - 0.75, w: (ph) => 1 - 0.10 * Math.max(0, -ph) });
   // the coat: open at the front, back long and swinging out, trimmed in red
   const R = prof([[0.18, 0.43], [0.4, 0.37], [0.7, 0.28], [1.0, 0.205], [1.30, 0.195], [1.42, 0.185]]), rings = [], CS = 14, CN = 30, gap = 1.1;
   for (let i = 0; i <= CS; i++) {
     const row = [];
     for (let k = 0; k < CN; k++) {
-      const th = gap + (Math.PI * 2 - 2 * gap) * (k / (CN - 1)), hem = 0.20 + 0.11 * Math.abs(Math.cos(th / 2)) + 0.03 * Math.sin(th * 4), top = 1.17 + 0.25 * Math.pow(Math.abs(Math.cos(th / 2)), 1.5), y = lerp(top, hem, i / CS);
-      const r = R(y)[0] * (1 + 0.05 * Math.sin(th * 6 + y * 5) * (1 - y / 1.42)) + 0.018;
+      const th = gap + (Math.PI * 2 - 2 * gap) * (k / (CN - 1)), hem = 0.20 + 0.11 * Math.abs(Math.cos(th / 2)) + 0.05 * Math.sin(th * 4.5), top = 1.17 + 0.25 * Math.pow(Math.abs(Math.cos(th / 2)), 1.5), y = lerp(top, hem, i / CS);
+      const r = R(y)[0] * (1 + 0.085 * Math.sin(th * 4.5 + y * 3.2) * (1 - y / 1.42)) + 0.018;
       row.push([Math.sin(th) * r * (1 + 0.22 * Math.max(0, 0.9 - y) * Math.abs(Math.sin(th))), y, -Math.cos(th) * r * 0.96]);
     }
     rings.push(row);
   }
   g.loft(rings, (x, y, z) => {
     const th = Math.atan2(x, -z), a = th < 0 ? th + Math.PI * 2 : th, edge = Math.min(a - gap, Math.PI * 2 - gap - a);
-    const hemY = 0.20 + 0.11 * Math.abs(Math.cos(a / 2));
+    const hemY = 0.20 + 0.11 * Math.abs(Math.cos(a / 2)) + 0.05 * Math.sin(a * 4.5);
     if (edge < 0.05 || y < hemY + 0.035) return red;
-    return mix(dark(coat, 0.78), coat, clamp01((y - 0.2) / 0.9));
+    return mix(dark(coat, 0.72 + 0.14 * Math.sin(a * 4.5 + y * 3.2)), coat, clamp01((y - 0.2) / 0.9));
   }, { open: true });
   g.ellipsoid(0, 1.44, 0.04, 0.108, 0.045, 0.100, dark(coat, 0.9), { lat: 4, lon: 14, t0: 0.9, t1: Math.PI * 2 - 0.9 });   // the standing collar
 }
@@ -208,6 +213,7 @@ export function buildBody(L) {
   const g = new Geo().at(0, -HIP, 0, 0), sk = L.skin, T = torsoProfile(L), tun = L.tunic;
   const leather = [0.17, 0.13, 0.10];
   tube(g, 0.80, 1.43, 44, 32, T, (x, y, z) => {
+    if (L.kit === 'tariel') return (z < 0 && y > 1.27 + 1.9 * Math.abs(x)) || y > 1.395 ? sk : tun;
     if (L.female) {
       const neck = z < 0 ? 1.385 - 0.075 * Math.max(0, 1 - (x / 0.115) * (x / 0.115)) : 1.385;
       if (y > neck) return sk;
@@ -268,6 +274,7 @@ export function buildFore(L, right) {
   tube(g, 0.005, -0.235, 4, 10, (y) => [lerp(0.043, 0.031, clamp01(-y / 0.235))], (x, y) => L.glove ? (y < -0.115 ? L.glove : L.sleeve) : (!L.puff && L.longSleeve && y > -0.17) ? L.sleeve : sk);
   g.ellipsoid(0, -0.285, -0.004, 0.027, 0.050, 0.020, L.glove || sk, { lat: 5, lon: 8 });              // the hand
   if (L.glove) for (let k = 0; k < 4; k++) g.ellipsoid(-0.018 + k * 0.012, -0.325, -0.016, 0.006, 0.011, 0.007, [0.82, 0.83, 0.86], { lat: 3, lon: 5 });   // silver knuckle-guards
+  for (let k = 0; k < 4; k++) g.ellipsoid(-0.015 + k * 0.010, -0.326 - (k === 1 || k === 2 ? 0.006 : 0), -0.010, 0.0065, 0.024, 0.0085, L.glove || sk, { lat: 3, lon: 6 });  // fingers
   g.ellipsoid(-0.018 * (right ? -1 : 1), -0.268, -0.014, 0.008, 0.022, 0.009, sk, { lat: 3, lon: 6 });  // the thumb
   if (right && L.extra === 'guard') {                                                                 // a spear, held upright beside her
     g.cyl(0.016, 0.016, -0.62, 1.28, 6, [0.46, 0.34, 0.20]);
