@@ -133,9 +133,9 @@ function buildHair(g, L, HY) {
       const t = k / 4, w = lerp(0.115, 0.150, t) + (k % 2 ? 0.008 : -0.004);
       g.ellipsoid((k % 2 ? 0.012 : -0.012), lerp(1.55, 1.38, t), lerp(0.070, 0.100, t), w, 0.070, 0.062, k % 2 ? hd : shade, { lat: 5, lon: 12 });
     }
-    for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) {                                        // the sides: waves framing the face
-      const t = k / 3, x = sx * (0.106 + (k % 2 ? 0.020 : 0.006) + 0.016 * t), y = lerp(1.545, 1.375, t), z = lerp(-0.005, 0.045, t);
-      g.ellipsoid(x, y, z, 0.040, 0.062, 0.070, k % 2 ? h : hd, { lat: 5, lon: 8 });
+    for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) {                                        // the sides: long waves framing the face
+      const t = k / 3, x = sx * (0.104 + 0.026 * t + (k % 2 ? 0.008 : 0)), y = lerp(1.545, 1.375, t), z = lerp(0.0, 0.050, t);
+      g.ellipsoid(x, y, z, 0.034, 0.075, 0.062, k % 2 ? dark(h, 0.92) : h, { lat: 5, lon: 8 });
     }
     if (L.wreath) {                                                                                // a laurel wreath: leaves around the brow
       const leaf = [[0.30, 0.38, 0.14], [0.52, 0.50, 0.16], [0.40, 0.46, 0.15]];
@@ -185,7 +185,7 @@ function buildKit(g, L, T) {
   for (let k = 0; k < 9; k++) g.ellipsoid(0.03, 0.94 - k * 0.048, -bz - 0.035, 0.026, 0.026, 0.020, k % 2 ? [0.55, 0.58, 0.18] : lime, { lat: 3, lon: 6 });
   g.ellipsoid(0.03, 0.47, -bz - 0.035, 0.022, 0.050, 0.020, [0.50, 0.40, 0.18], { lat: 4, lon: 6 });
   // the quilted shoulder mantle: padded cells, red trim
-  const quilt = (x, y, z) => { if (y < 1.255) return [0.52, 0.15, 0.11]; const q = Math.abs(Math.sin(x * 40)) * Math.abs(Math.sin((y + z * 0.4) * 40)); return mix(dark(mant, 0.62), mant, clamp01((q - 0.05) / 0.4)); };
+  const quilt = (x, y, z) => { if (y < 1.255) return [0.52, 0.15, 0.11]; const q = Math.abs(Math.sin(x * 30)) * Math.abs(Math.sin((y + z * 0.4) * 30)); return mix(dark(mant, 0.50), dark(mant, 1.12), clamp01((q - 0.04) / 0.45)); };
   g.ellipsoid(0, 1.335, 0.014, 0.238, 0.150, 0.135, quilt, { lat: 12, lon: 56, phi0: -1.0, phi1: 1.05, t0: 0.75, t1: Math.PI * 2 - 0.75, w: (ph) => 1 - 0.10 * Math.max(0, -ph) });
 }
 

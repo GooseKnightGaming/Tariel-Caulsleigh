@@ -16,7 +16,7 @@ const frac = (x) => x - Math.floor(x);
 
 // Thiah, drawn from Rhys's HeroForge reference: a short young woman, golden hair in a side-swept fringe and a long plait,
 // green eyes, a laced red bodice with puffed off-the-shoulder sleeves, a draped overskirt, bare feet
-export const THIAH = { id: 90, role: 'thiah', name: 'Thiah', height: 1.52, tint: [0.50, 0.13, 0.11], seed: 0.9 };
+export const THIAH = { id: 90, role: 'thiah', name: 'Thiah', height: 1.62, tint: [0.50, 0.13, 0.11], seed: 0.9 };
 
 // Tariel (Thiah's other self: the same woman), drawn from Rhys's HeroForge reference: a laurel wreath, shoulder-length golden waves, a quilted shoulder mantle,
 // a long olive coat trimmed in red, crossed straps, a lime sash with a tassel, a pleated kilt, tall boots, studded gloves
@@ -93,8 +93,18 @@ export class Figure {
     this.ang = gaitAngles('idle', 0, 0, 0);
     this.spear = L.extra === 'guard';
   }
+  // ---- the playable woman: main.js drives her from the walker, as it did the old actor ----
+  get body() { return this.root; }
+  // which clip: a gait sets the speed the limbs are swung at; a pose sets how she stands
+  play(gait, rate) {
+    const pace = { walk: 1.6, jog: 4.6, sprint: 7 };
+    if (pace[gait]) { this.ext = pace[gait] * (rate || 1); this.pose = 'idle'; }
+    else { this.ext = 0; if (gait === 'talk' || gait === 'arms' || gait === 'idle') this.pose = gait; else if (gait !== 'air') this.pose = 'idle'; }
+  }
+  // swing the limbs for this frame (the position is set from outside)
+  animate(dt) { this.t += dt; this.swing(dt, this.ext || 0); this.sync(); }
   place(x, z, yaw) { this.pos = [x, groundAt(x, z), z]; this.path = null; this.moving = 0; if (yaw !== undefined) this.yaw = this.wantYaw = yaw; this.sync(); }
-  face(x, z) { this.wantYaw = Math.atan2(-(x - this.pos[0]), -(z - this.pos[2])); }
+  face(x, z) { this.wantYaw = Math.atan2(-(x - this.pos[0]), -(z - this.pos[2])); if (this.snapFace) this.yaw = this.wantYaw; }
   // walk a list of [x, z] points at a pace (m/s); done() when there
   go(points, pace, done) { this.path = points.slice(); this.speed = pace || 1.5; this.onArrive = done || null; }
   update(dt) {
@@ -114,10 +124,13 @@ export class Figure {
     let a = this.wantYaw - this.yaw;
     while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2;
     this.yaw += a * Math.min(1, dt * (v ? 9 : 5));
+    this.swing(dt, v);
+    this.sync();
+  }
+  swing(dt, v) {
     this.moving += (v - this.moving) * Math.min(1, dt * 8);
     this.phase += dt * this.moving / STRIDE;
     this.pose2(gaitAngles(this.pose, this.phase, this.moving, this.t), dt);
-    this.sync();
   }
   // ease the limbs towards their angles, then set them
   pose2(g, dt) {

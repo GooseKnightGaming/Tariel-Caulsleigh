@@ -81,14 +81,17 @@ async function makeWorld() {
   }
   sky = buildSky(pc, app);
   say('Waking the people…'); await frame();
-  const WHO = ['tariel', 'thiah', 'caulsleigh', 'siofel', 'rider'];
+  const WHO = ['caulsleigh', 'siofel', 'rider'];
   const bodies = await Promise.all(WHO.map((k) => loadBody(pc, app, CAST[k].model).catch(() => null)));
   const HEIGHT = { tariel: 1.70, thiah: 1.70, caulsleigh: 1.84, siofel: 1.80, rider: 1.76 };
   WHO.forEach((k, i) => {
     if (!bodies[i]) return;
     const a = new Actor(pc, app, bodies[i], { name: CAST[k].name, height: HEIGHT[k] });
-    if (k === 'tariel' || k === 'thiah') selves[k] = a; else cast[k] = a;
+    cast[k] = a;
   });
+  // Tariel and Thiah: the same woman, drawn entirely in code (see game/anatomy.js)
+  selves.tariel = new Figure(pc, app, TARIEL); selves.thiah = new Figure(pc, app, THIAH);
+  for (const k of ['tariel', 'thiah']) { selves[k].snapFace = true; selves[k].pose = 'idle'; }
   tariel = selves.tariel;
   if (selves.thiah) selves.thiah.visible = false;
   const hb = await loadBody(pc, app, 'Horse').catch(() => null);
@@ -453,7 +456,7 @@ app.on('update', (dt) => {
       else if (g === 'walk') tariel.play('walk', Math.max(0.6, sp / 1.6));
       else if (g === 'jog') tariel.play('jog', Math.max(0.7, sp / 4.6));
       else tariel.play('sprint', sp / 7);
-      tariel.sync();
+      tariel.animate(dt);
     } else tariel.update(dt);
   }
   if (horse && horse.visible) horse.update(dt);

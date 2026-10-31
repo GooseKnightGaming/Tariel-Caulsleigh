@@ -36,3 +36,5 @@ Controls: **WASD** move · **mouse** look · **wheel** zoom · **Shift** run · 
 jump · **Q** Tariel / Thiah · **E** use · **I** gear · **K** character · **M** map · hold **T** to hurry time · **Esc** pause · **F3** debug line · **H** help. A gamepad works too.
 
 Building: `npm install`, `npm test`, `node build.mjs` (writes `index.html` and `game.js` here, from `src/`).
+
+**Tariel and Thiah (T0.2):** the playable woman - Tariel Caulsleigh and her other self Thiah Kirðotr - and the townsfolk are now drawn entirely in code (`src/game/anatomy.js`, `figure.js`), the two main looks built from Rhys's HeroForge reference. Caulsleigh, Siofel and the rider still use the Quaternius bodies.
