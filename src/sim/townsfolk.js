@@ -185,6 +185,21 @@ const soc = (work, leave, sociable, bed) => (sociable ? [[0, 'home'], [work, 'wo
 // Ten people of Stanlech (placeholders). Each: { id, role, name, home (building id), mouth, bank, work: [{ spot, face }],
 // blocks: [[from hour, 'home' | 'work' | 'tavern'], ...], tavernSpot, tavernFace, pose, pace, height, tint, seed }.
 // blocks say where they are from that hour until the next.
+// placeholder names and greetings (Rhys's to replace): who they are, and what they say when spoken to
+const NAMES = ['Hobb Marlow', 'Wenna Carr', 'Dunstan Pell', 'Maud Ashby', 'Garrick Toll', 'Tilda Brook', 'Osric Venn', 'Nell Harker', 'Aldous Fenn', 'Bertha Lisle'];
+const LINES = {
+  keeper: ['Mind the step. Ale, bed or news - I\'ve a little of each.', 'Quiet, for a market day. Sit where you like.', 'We\'re shut to trouble here. Drink up, and keep your knives sheathed.'],
+  guard: ['Move along, miss, nothing to see.', 'Bridge is open to travellers by day. Nights, we like to know who\'s about.', 'Stay out of trouble and we\'ll get along.'],
+  stall: ['Fresh in this morning. Take a look, no charge for looking.', 'Prices are what they are, miss. Times are hard.', 'Barley, cheese, a bit of cloth. What\'ll it be?'],
+  villager: ['Morning. You\'re not from Stanlech, are you?', 'Mind the river, it\'s running high this month.', 'Evening. Is it true folk have gone missing up the valley?'],
+};
+// what person p says to someone who speaks to them at this hour; n picks which of their lines
+export function greeting(p, hour, n) {
+  const set = LINES[p.role] || LINES.villager;
+  return set[Math.abs((n || 0) + p.id) % set.length];
+}
+export function roleLabel(p) { return { keeper: 'innkeeper', guard: 'guard', stall: 'stallholder', villager: 'villager' }[p.role] || 'villager'; }
+
 export function makeFolk() {
   const bs = W.buildings(), bridge = W.PLACES.bridge;
   const houses = bs.map((b, id) => ({ b, id })).filter(({ b }) => b.kind === 'house' && Math.hypot(b.x - bridge[0], b.z - bridge[1]) < 320);
@@ -197,6 +212,7 @@ export function makeFolk() {
     if (role === 'keeper') p.home = tid; else p.home = houses[Math.floor(i * houses.length / ROLES.length)].id;
     p.mouth = doorMouth(p.home);
     p.bank = riverBank(p.mouth);
+    p.who = NAMES[i % NAMES.length];
     const sociable = r() < 0.75;
     if (role === 'keeper') {
       p.name = 'Innkeeper'; p.pose = 'arms';

@@ -13,6 +13,7 @@ import { buildVillage, DOORS, updateDoors } from './village.js';
 import { OPEN, doors, blocked, clearTo } from '../world/solids.js';
 import * as CH from '../sim/character.js';
 import { Town } from './townsfolk.js';
+import { roleLabel } from '../sim/townsfolk.js';
 import { Figure, THIAH, TARIEL } from './figure.js';
 
 const VERSION = 'T0.2';
@@ -318,8 +319,12 @@ function nearby() {
     }
     if (offerDoor) offer = 'door';
   }
+  offerPerson = null;
+  if (!offer && town) { offerPerson = town.nearest(walker.pos[0], walker.pos[2], 2.3); if (offerPerson) offer = 'talk'; }
+  if (chat && (!chat.s.fig.visible || Math.hypot(chat.s.fig.pos[0] - walker.pos[0], chat.s.fig.pos[2] - walker.pos[2]) > 4)) endChat();
   $('prompt').classList.toggle('gone', !offer || paused);
   if (offer === 'sleep') $('prompt').innerHTML = '<kbd>E</kbd> Sleep until morning';
+  else if (offer === 'talk') $('prompt').innerHTML = '<kbd>E</kbd> Talk to ' + offerPerson.p.who + ' (' + roleLabel(offerPerson.p) + ')';
   else if (offer === 'door') $('prompt').innerHTML = '<kbd>E</kbd> ' + (OPEN.has(offerDoor.id) ? 'Close' : 'Open') + ' the door' + (offerDoor.b.kind === 'tavern' ? ' (the tavern)' : '');
 }
 function useDoor(d) {
@@ -332,7 +337,14 @@ function useDoor(d) {
   const v = DOORS.get(d.id); if (v) v.want = open ? 1 : 0;
 }
 const NIGHT = ['one', 'two', 'three'];
+let offerPerson = null, chat = null;
+function endChat() { if (chat) { if (!chat.s.fig.path) chat.s.fig.pose = chat.s.p.pose || 'idle'; chat = null; } $('talk').classList.add('gone'); }
 function act() {
+  if (offer === 'talk' && offerPerson) {
+    const s = offerPerson, n = chat && chat.s === s ? chat.n + 1 : 0, r = town.talk(s, walker.pos, clock.hour, n);
+    chat = { s, n }; showLine(r.name + ' (' + r.role + ')', r.line, null); $('talkmore').textContent = 'E to speak again';
+    return;
+  }
   if (offer === 'door' && offerDoor) { useDoor(offerDoor); return; }
   if (offer !== 'sleep' || sleeping) return;
   if (who === 'tariel') { hint("Tariel Caulsleigh can't be seen taking a bed here. Become Thiah first (Q).", 5000); return; }

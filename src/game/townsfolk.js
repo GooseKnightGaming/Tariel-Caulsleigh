@@ -3,7 +3,7 @@
 // not seen again until they come out), and stand about as they do in each place.
 
 import { Figure } from './figure.js';
-import { makeFolk, plan, route, dayMoves } from '../sim/townsfolk.js';
+import { makeFolk, plan, route, dayMoves, greeting, roleLabel } from '../sim/townsfolk.js';
 
 export class Town {
   constructor(pc, app) { this.pc = pc; this.app = app; this.people = []; this.queue = []; }
@@ -65,6 +65,18 @@ export class Town {
     f.pose = tg.pose;
   }
 
+  // the person out and about nearest to (x, z) within r metres, or null
+  nearest(x, z, r) {
+    let best = null, bd = r;
+    for (const s of this.people) { if (!s.fig.visible) continue; const d = Math.hypot(s.fig.pos[0] - x, s.fig.pos[2] - z); if (d < bd) { bd = d; best = s; } }
+    return best;
+  }
+  // she speaks to them: they turn to her and answer
+  talk(s, to, hour, n) {
+    s.fig.face(to[0], to[2]);
+    if (!s.fig.path) s.fig.pose = 'talk';
+    return { name: s.p.who, role: roleLabel(s.p), line: greeting(s.p, hour, n) };
+  }
   // for the debug line: how many are out and about, and how many are walking
   summary() {
     let out = 0, walking = 0;

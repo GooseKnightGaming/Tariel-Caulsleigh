@@ -2,7 +2,7 @@
 import * as W from '../src/world/world.js';
 import { Walker, groundAt, tooDeep, bridgeAt } from '../src/sim/walker.js';
 import { Clock, sunDir, skyAt, daylight } from '../src/sim/sky.js';
-import { makeFolk, plan, route, dayMoves, walkable, inTavern, tavernGate, ROLES } from '../src/sim/townsfolk.js';
+import { makeFolk, plan, route, dayMoves, walkable, inTavern, tavernGate, ROLES, greeting } from '../src/sim/townsfolk.js';
 import { gaitAngles, POSES } from '../src/sim/gait.js';
 
 let pass = 0, fail = 0;
@@ -177,6 +177,10 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
   const p = folk.find((q) => q.bank === 'szetter'), r = route(p.mouth, folk[0].mouth);
   ok(r && r.every((q) => !(W.waterAt(q[0], q[1]) !== null && Math.abs(W.riverCoords(q[0], q[1]).s) > 8 && W.riverCoords(q[0], q[1]).n * W.riverCoords(q[0], q[1]).n < 64)), 'the far bank crosses where the bridge is');
 }
+// people have names and something to say
+{ const folk = makeFolk(), names = new Set(folk.map((p) => p.who));
+  ok(names.size === folk.length && folk.every((p) => typeof p.who === 'string' && p.who.length > 2), 'everyone has a name of their own');
+  ok(folk.every((p) => [0, 1, 2, 3].every((n) => typeof greeting(p, 12, n) === 'string' && greeting(p, 12, n).length > 5)), 'everyone has something to say'); }
 // how a drawn person moves
 for (const pose of POSES) {
   let widest = 0;
