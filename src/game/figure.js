@@ -86,6 +86,7 @@ export class Figure {
     this.legR = joint('legR', 0.095, HIP, this.root); part('leg', parts.legR, this.legR);
     this.shinL = joint('shinL', 0, -THIGH, this.legL); part('shin', parts.shinL, this.shinL);
     this.shinR = joint('shinR', 0, -THIGH, this.legR); part('shin', parts.shinR, this.shinR);
+    if (parts.coat) { this.coat = joint('coat', 0, 1.30 - HIP, this.upper); part('coat', parts.coat, this.coat); }
     this.stride = L.dress ? 0.55 : L.kit ? 0.75 : 1;                                   // a long skirt keeps the steps short
     this.pos = [0, 0, 0]; this.yaw = 0; this.wantYaw = 0; this.path = null; this.speed = 0; this.pose = 'idle';
     this.phase = p.seed * 6; this.t = p.seed * 50; this.onArrive = null; this.moving = 0;
@@ -133,6 +134,7 @@ export class Figure {
     this.foreR.setLocalEulerAngles(c.foreR * keep, 0, 0);
     this.upper.setLocalPosition(0, HIP + c.bob, 0);
     this.upper.setLocalEulerAngles(c.lean, c.sway, 0);
+    if (this.coat) this.coat.setLocalEulerAngles(-(1.2 + this.moving * 4 + 1.2 * Math.sin(this.t * 1.3)) - c.lean * 0.5, 0, 0);   // the coat streams back as she walks
   }
   sync() {
     this.root.setPosition(this.pos[0], this.pos[1], this.pos[2]);

@@ -131,7 +131,7 @@ function buildHair(g, L, HY) {
     E(g, 0.045, HY + 0.055, -0.098, 0.060, 0.050, 0.040, hl, { lat: 5, lon: 10 });
     for (let k = 0; k < 5; k++) {                                                                  // the back: clumps flowing down to the shoulders
       const t = k / 4, w = lerp(0.115, 0.150, t) + (k % 2 ? 0.008 : -0.004);
-      g.ellipsoid((k % 2 ? 0.012 : -0.012), lerp(1.58, 1.38, t), lerp(0.060, 0.095, t), w, 0.075, 0.062, k % 2 ? hd : shade, { lat: 5, lon: 12 });
+      g.ellipsoid((k % 2 ? 0.012 : -0.012), lerp(1.55, 1.38, t), lerp(0.070, 0.100, t), w, 0.070, 0.062, k % 2 ? hd : shade, { lat: 5, lon: 12 });
     }
     for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) {                                        // the sides: waves framing the face
       const t = k / 3, x = sx * (0.106 + (k % 2 ? 0.020 : 0.006) + 0.016 * t), y = lerp(1.545, 1.375, t), z = lerp(-0.005, 0.045, t);
@@ -150,13 +150,12 @@ function buildHair(g, L, HY) {
   // 'braid': a side-swept fringe, a long lock by one cheek, and a plait down the back
   E(g, 0.01, HY + 0.062, -0.082, 0.098, 0.052, 0.050, h, { lat: 5, lon: 10 });
   E(g, -0.052, HY + 0.040, -0.105, 0.040, 0.030, 0.026, hl, { lat: 4, lon: 8 });
-  E(g, -0.078, HY - 0.004, -0.088, 0.024, 0.062, 0.030, h, { lat: 4, lon: 8 });                  // the sweep of fringe over her cheek
-  E(g, -0.100, HY - 0.040, 0.012, 0.018, 0.080, 0.058, h, { lat: 5, lon: 8 });           // the lock at her left cheek
-  E(g, 0.100, HY - 0.035, 0.016, 0.018, 0.070, 0.058, h, { lat: 5, lon: 8 });
+  E(g, -0.100, HY - 0.040, 0.034, 0.016, 0.090, 0.056, h, { lat: 5, lon: 8 });           // the lock at her left cheek
+  E(g, 0.100, HY - 0.035, 0.036, 0.016, 0.080, 0.056, h, { lat: 5, lon: 8 });
   const tie = [0.30, 0.22, 0.16];
   for (let k = 0; k < 15; k++) {                                                                   // the plait: fifteen twists, tapering
     const t = k / 14, y = lerp(1.490, 0.960, t), z = lerp(0.128, 0.162, Math.sin(t * 2.4) * 0.8 + 0.15), r = lerp(0.052, 0.030, t);
-    g.ellipsoid((k % 2 ? 0.012 : -0.012) * (1 - t * 0.6), y, z, r, 0.031, r * 0.9, k % 2 ? dark(h, 0.84) : h, { lat: 4, lon: 8 });
+    g.ellipsoid((k % 2 ? 0.010 : -0.010) * (1 - t * 0.6), y, z, r, 0.046, r * 0.9, k % 2 ? dark(h, 0.90) : h, { lat: 4, lon: 8 });
   }
   g.ellipsoid(0, 0.945, 0.165, 0.034, 0.016, 0.034, tie, { lat: 3, lon: 8 });
   g.ellipsoid(0, 0.915, 0.168, 0.026, 0.034, 0.024, h, { lat: 4, lon: 8 });
@@ -186,14 +185,20 @@ function buildKit(g, L, T) {
   for (let k = 0; k < 9; k++) g.ellipsoid(0.03, 0.94 - k * 0.048, -bz - 0.035, 0.026, 0.026, 0.020, k % 2 ? [0.55, 0.58, 0.18] : lime, { lat: 3, lon: 6 });
   g.ellipsoid(0.03, 0.47, -bz - 0.035, 0.022, 0.050, 0.020, [0.50, 0.40, 0.18], { lat: 4, lon: 6 });
   // the quilted shoulder mantle: padded cells, red trim
-  const quilt = (x, y, z) => { const q = Math.abs(Math.sin(x * 40)) * Math.abs(Math.sin((y + z * 0.4) * 40)); return mix(dark(mant, 0.62), mant, clamp01((q - 0.05) / 0.4)); };
-  g.ellipsoid(0, 1.335, 0.014, 0.238, 0.150, 0.135, quilt, { lat: 12, lon: 56, phi0: -0.78, phi1: 1.05, t0: 0.75, t1: Math.PI * 2 - 0.75, w: (ph) => 1 - 0.10 * Math.max(0, -ph) });
+  const quilt = (x, y, z) => { if (y < 1.255) return [0.52, 0.15, 0.11]; const q = Math.abs(Math.sin(x * 40)) * Math.abs(Math.sin((y + z * 0.4) * 40)); return mix(dark(mant, 0.62), mant, clamp01((q - 0.05) / 0.4)); };
+  g.ellipsoid(0, 1.335, 0.014, 0.238, 0.150, 0.135, quilt, { lat: 12, lon: 56, phi0: -1.0, phi1: 1.05, t0: 0.75, t1: Math.PI * 2 - 0.75, w: (ph) => 1 - 0.10 * Math.max(0, -ph) });
+}
+
+
+// Tariel's coat, its own part so it can swing: it hangs from the neck (y = 0 there is 1.30 m above the feet)
+export function buildCoat(L) {
+  const g = new Geo().at(0, -1.30, 0, 0), coat = L.coat, red = [0.55, 0.14, 0.10];
   // the coat: open at the front, back long and swinging out, trimmed in red
   const R = prof([[0.18, 0.43], [0.4, 0.37], [0.7, 0.28], [1.0, 0.205], [1.30, 0.195], [1.42, 0.185]]), rings = [], CS = 14, CN = 30, gap = 1.1;
   for (let i = 0; i <= CS; i++) {
     const row = [];
     for (let k = 0; k < CN; k++) {
-      const th = gap + (Math.PI * 2 - 2 * gap) * (k / (CN - 1)), hem = 0.20 + 0.11 * Math.abs(Math.cos(th / 2)) + 0.05 * Math.sin(th * 4.5), top = 1.17 + 0.25 * Math.pow(Math.abs(Math.cos(th / 2)), 1.5), y = lerp(top, hem, i / CS);
+      const th = gap + (Math.PI * 2 - 2 * gap) * (k / (CN - 1)), hem = 0.20 + 0.11 * Math.abs(Math.cos(th / 2)) + 0.05 * Math.sin(th * 4.5), top = 1.27 + 0.15 * Math.pow(Math.abs(Math.cos(th / 2)), 1.5), y = lerp(top, hem, i / CS);
       const r = R(y)[0] * (1 + 0.085 * Math.sin(th * 4.5 + y * 3.2) * (1 - y / 1.42)) + 0.018;
       row.push([Math.sin(th) * r * (1 + 0.22 * Math.max(0, 0.9 - y) * Math.abs(Math.sin(th))), y, -Math.cos(th) * r * 0.96]);
     }
@@ -203,9 +208,10 @@ function buildKit(g, L, T) {
     const th = Math.atan2(x, -z), a = th < 0 ? th + Math.PI * 2 : th, edge = Math.min(a - gap, Math.PI * 2 - gap - a);
     const hemY = 0.20 + 0.11 * Math.abs(Math.cos(a / 2)) + 0.05 * Math.sin(a * 4.5);
     if (edge < 0.05 || y < hemY + 0.035) return red;
-    return mix(dark(coat, 0.72 + 0.14 * Math.sin(a * 4.5 + y * 3.2)), coat, clamp01((y - 0.2) / 0.9));
+    return mix(dark(coat, 0.70 + 0.22 * Math.sin(a * 4.5 + y * 3.2)), coat, clamp01((y - 0.2) / 0.9));
   }, { open: true });
   g.ellipsoid(0, 1.44, 0.04, 0.108, 0.045, 0.100, dark(coat, 0.9), { lat: 4, lon: 14, t0: 0.9, t1: Math.PI * 2 - 0.9 });   // the standing collar
+  return g;
 }
 
 // the torso: skin at the neckline, bodice or tunic, belt, skirt, and the head on top of it all
@@ -304,5 +310,6 @@ export function buildParts(pc, device, L) {
   return {
     body: m(buildBody(L)), armL: m(buildArm(L, false)), armR: m(buildArm(L, true)), foreL: m(buildFore(L, false)), foreR: m(buildFore(L, true)),
     legL: m(buildThigh(L)), legR: m(buildThigh(L)), shinL: m(buildShin(L)), shinR: m(buildShin(L)),
+    coat: L.kit === 'tariel' ? m(buildCoat(L)) : null,
   };
 }
