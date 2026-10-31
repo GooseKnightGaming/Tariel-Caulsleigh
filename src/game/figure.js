@@ -1,76 +1,45 @@
-// TARIEL CAULSLEIGH - a person drawn entirely in code: a painted low-poly body (the same Geo shapes and vertex colours
-// as the houses), five parts - body, two arms, two legs - swung by sim/gait.js. No asset packs: this is Rhys's own.
-// A figure faces -z at yaw 0 (north), like the walker.
+// TARIEL CAULSLEIGH - a person drawn entirely in code: smooth, rounded, painted forms (anatomy.js) on nine joints - body, two
+// arms with elbows, two legs with knees - swung by sim/gait.js. No asset packs: this is Rhys's own.
+// A figure faces -z at yaw 0 (north), like the walker. The shapes are in anatomy.js.
 
-import { Geo, vcMaterial } from './geo.js';
+import { vcMaterial } from './geo.js';
+import { buildParts, HIP, ARM_X, SHOULDER, UPPER_ARM, THIGH } from './anatomy.js';
 import { groundAt } from '../sim/walker.js';
 import { gaitAngles, STRIDE } from '../sim/gait.js';
 
 const SKIN = [[0.93, 0.78, 0.64], [0.86, 0.66, 0.50], [0.72, 0.52, 0.38], [0.55, 0.38, 0.27], [0.96, 0.82, 0.70]];
 const HAIR = [[0.14, 0.10, 0.07], [0.30, 0.20, 0.12], [0.50, 0.34, 0.18], [0.72, 0.58, 0.30], [0.62, 0.62, 0.60], [0.40, 0.18, 0.10]];
 const TROUSERS = [[0.34, 0.27, 0.20], [0.28, 0.28, 0.30], [0.25, 0.30, 0.24], [0.40, 0.33, 0.25]];
-const STYLES = ['short', 'long', 'short', 'cap'];
-const HIP = 0.88;                                   // the hips' height above the feet
+const EYES = [[0.30, 0.50, 0.30], [0.35, 0.25, 0.14], [0.30, 0.42, 0.60], [0.40, 0.32, 0.18]];
 const dark = (c, k) => [c[0] * k, c[1] * k, c[2] * k];
 const frac = (x) => x - Math.floor(x);
+
+// Thiah, drawn from Rhys's HeroForge reference: a short young woman, golden hair in a side-swept fringe and a long plait,
+// green eyes, a laced red bodice with puffed off-the-shoulder sleeves, a draped overskirt, bare feet
+export const THIAH = { id: 90, role: 'thiah', name: 'Thiah', height: 1.52, tint: [0.50, 0.13, 0.11], seed: 0.9 };
 
 // what someone looks like, from who they are (deterministic: the same person is always the same person)
 export function lookOf(p) {
   const h = (n) => frac(Math.sin((p.id + 1) * 12.9898 + n * 78.233) * 43758.5453);
   const pick = (a, n) => a[Math.floor(h(n) * a.length)];
+  const female = p.role === 'thiah' ? true : p.role === 'keeper' ? false : p.role === 'guard' ? p.id % 2 === 0 : h(6) < 0.55;
   const L = {
-    skin: pick(SKIN, 1), hair: pick(HAIR, 2), style: pick(STYLES, 3), tunic: p.tint, trousers: pick(TROUSERS, 4),
-    boots: [0.20, 0.14, 0.10], extra: null, seed: p.id * 7.3, height: p.height, width: 0.94 + 0.12 * h(5),
+    skin: pick(SKIN, 1), hair: pick(HAIR, 2), eyes: pick(EYES, 7), style: female ? (h(3) < 0.5 ? 'braid' : 'long') : (h(3) < 0.5 ? 'short' : 'cap'),
+    tunic: p.tint, trousers: pick(TROUSERS, 4), bootCol: [0.20, 0.14, 0.10], extra: null, height: p.height, female, dress: female,
+    belt: [0.22, 0.17, 0.13], lips: [0.80, 0.46, 0.44], laces: female, puff: female, longSleeve: !female, boots: false, barefoot: false,
   };
-  if (p.role === 'guard') { L.extra = 'guard'; L.style = 'helmet'; }
-  else if (p.role === 'keeper') { L.extra = 'apron'; L.style = 'bald'; L.hair = [0.62, 0.62, 0.60]; L.width = 1.12; }
+  L.cap = dark(L.tunic, 0.9); L.sleeve = L.tunic; L.skirt = dark(L.tunic, 0.92); L.over = female && h(8) < 0.6 ? dark(L.tunic, 1.12) : null;
+  L.width = female ? 0.96 + 0.06 * h(5) : 1.0 + 0.1 * h(5);
+  if (p.role === 'thiah') {
+    Object.assign(L, { skin: [0.97, 0.80, 0.70], hair: [0.92, 0.82, 0.30], eyes: [0.30, 0.62, 0.34], style: 'braid', tunic: [0.50, 0.13, 0.11],
+      skirt: [0.42, 0.10, 0.09], over: [0.53, 0.14, 0.11], sleeve: [0.52, 0.14, 0.11], belt: [0.27, 0.22, 0.19], barefoot: true, laces: true, puff: true, width: 1.0 });
+  }
+  if (p.role === 'guard') { L.extra = 'guard'; L.style = 'helmet'; L.tunic = [0.40, 0.14, 0.12]; L.sleeve = L.tunic; L.skirt = L.tunic; L.dress = false; L.puff = false; L.laces = false; L.longSleeve = true; L.boots = true; L.over = null; }
+  else if (p.role === 'keeper') { L.extra = 'apron'; L.style = 'bald'; L.hair = [0.62, 0.62, 0.60]; L.width = 1.12; L.dress = false; L.puff = false; L.laces = false; L.longSleeve = true; L.boots = true; }
   else if (p.role === 'stall') { L.extra = 'hat'; }
+  if (!L.dress) { L.skirt = L.tunic; L.boots = true; L.longSleeve = !L.puff; }
+  if (L.female && p.role !== 'thiah' && p.role !== 'guard') { L.boots = false; L.barefoot = h(9) < 0.5; }
   return L;
-}
-
-// the painted parts, in local metres (feet at y = 0; the body's geometry is hung from the hips)
-function buildParts(pc, device, L) {
-  const sk = L.skin, skd = dark(L.skin, 0.82), tun = L.tunic, tund = dark(L.tunic, 0.78), trs = L.trousers;
-  // body: skirt of the tunic, torso, belt, neck, head, hair, and the extras
-  const b = new Geo().at(0, -HIP, 0, 0);
-  b.cyl(0.215, 0.175, 0.62, 0.90, 8, tund);
-  b.cyl(0.175, 0.205, 0.88, 1.42, 8, tun);
-  b.cyl(0.182, 0.182, 0.90, 0.96, 8, [0.22, 0.15, 0.10]);
-  b.box(-0.03, 0.89, -0.20, 0.03, 0.97, -0.17, [0.72, 0.62, 0.30]);                  // the buckle
-  b.cyl(0.05, 0.05, 1.42, 1.51, 6, skd);
-  b.ball(0, 1.61, 0, 0.095, 0.115, 0.105, sk, 0.02, L.seed);
-  b.box(-0.016, 1.585, -0.118, 0.016, 1.635, -0.09, skd);                              // nose
-  b.box(-0.052, 1.63, -0.103, -0.028, 1.646, -0.094, [0.08, 0.07, 0.07]);              // eyes
-  b.box(0.028, 1.63, -0.103, 0.052, 1.646, -0.094, [0.08, 0.07, 0.07]);
-  if (L.style === 'short' || L.style === 'long') b.ball(0, 1.645, 0.02, 0.105, 0.10, 0.11, L.hair, 0.04, L.seed + 1);
-  if (L.style === 'long') b.box(-0.09, 1.31, 0.07, 0.09, 1.60, 0.15, L.hair);
-  if (L.style === 'cap') { b.ball(0, 1.665, 0.005, 0.108, 0.075, 0.112, dark(tun, 0.9), 0.02, L.seed + 2); b.box(-0.07, 1.64, -0.17, 0.07, 1.655, -0.10, dark(tun, 0.7)); }
-  if (L.style === 'helmet') { b.ball(0, 1.665, 0, 0.115, 0.10, 0.12, [0.52, 0.53, 0.56], 0.01, L.seed + 3); b.cyl(0.12, 0.12, 1.595, 1.625, 8, [0.45, 0.46, 0.49]); }
-  if (L.extra === 'apron') { b.box(-0.13, 0.62, -0.215, 0.13, 1.20, -0.195, [0.86, 0.84, 0.76]); }
-  if (L.extra === 'hat') { b.cyl(0.19, 0.19, 1.68, 1.70, 10, [0.62, 0.50, 0.30]); b.cyl(0.10, 0.09, 1.70, 1.80, 8, [0.58, 0.46, 0.27]); }
-  if (L.extra === 'guard') { b.box(-0.05, 1.10, -0.215, 0.05, 1.32, -0.19, [0.82, 0.72, 0.34]); }   // a badge on the chest
-  // an arm hangs from the shoulder (y = 0 there): sleeve, bare forearm, hand
-  const arm = (right) => {
-    const g = new Geo().at(0, 0, 0, 0);
-    g.cyl(0.058, 0.064, -0.31, 0.0, 6, tun);
-    g.cyl(0.046, 0.058, -0.57, -0.30, 6, sk);
-    g.ball(0, -0.61, 0, 0.046, 0.052, 0.046, sk, 0, L.seed + (right ? 5 : 6));
-    if (right && L.extra === 'guard') {                                                // a spear, held upright beside her
-      g.at(0, 0, -0.07, 0);
-      g.cyl(0.016, 0.016, -0.75, 1.15, 5, [0.46, 0.34, 0.20]);
-      g.cyl(0.04, 0.0, 1.15, 1.40, 5, [0.70, 0.71, 0.74]);
-    }
-    return g;
-  };
-  // a leg hangs from the hip: trousers, then a boot
-  const leg = () => {
-    const g = new Geo().at(0, 0, 0, 0);
-    g.cyl(0.056, 0.082, -0.78, 0.0, 6, trs);
-    g.box(-0.068, -0.88, -0.15, 0.068, -0.76, 0.07, L.boots);
-    return g;
-  };
-  const mesh = (g) => g.mesh(pc, device);
-  return { body: mesh(b), armL: mesh(arm(false)), armR: mesh(arm(true)), legL: mesh(leg()), legR: mesh(leg()) };
 }
 
 let MATERIAL = null;
@@ -92,17 +61,23 @@ export class Figure {
       e.addComponent('render', { meshInstances: [new pc.MeshInstance(mesh, mat)], castShadows: true, receiveShadows: true });
       parent.addChild(e); return e;
     };
+    const joint = (name, x, y, parent) => { const e = new pc.Entity(name); e.setLocalPosition(x, y, 0); parent.addChild(e); return e; };
     this.root = new pc.Entity(this.name);
     app.root.addChild(this.root);
     // the figure is built 1.75 m tall; scaled to this person's height and build
     const s = L.height / 1.75;
     this.root.setLocalScale(s * L.width, s, s * L.width);
-    this.upper = new pc.Entity('upper'); this.upper.setLocalPosition(0, HIP, 0); this.root.addChild(this.upper);
+    this.upper = joint('upper', 0, HIP, this.root);
     part('body', parts.body, this.upper);
-    this.armL = new pc.Entity('armL'); this.armL.setLocalPosition(-0.235, 1.38 - HIP, 0); this.upper.addChild(this.armL); part('arm', parts.armL, this.armL);
-    this.armR = new pc.Entity('armR'); this.armR.setLocalPosition(0.235, 1.38 - HIP, 0); this.upper.addChild(this.armR); part('arm', parts.armR, this.armR);
-    this.legL = new pc.Entity('legL'); this.legL.setLocalPosition(-0.105, HIP, 0); this.root.addChild(this.legL); part('leg', parts.legL, this.legL);
-    this.legR = new pc.Entity('legR'); this.legR.setLocalPosition(0.105, HIP, 0); this.root.addChild(this.legR); part('leg', parts.legR, this.legR);
+    this.armL = joint('armL', -ARM_X, SHOULDER - HIP, this.upper); part('arm', parts.armL, this.armL);
+    this.armR = joint('armR', ARM_X, SHOULDER - HIP, this.upper); part('arm', parts.armR, this.armR);
+    this.foreL = joint('foreL', 0, -UPPER_ARM, this.armL); part('fore', parts.foreL, this.foreL);
+    this.foreR = joint('foreR', 0, -UPPER_ARM, this.armR); part('fore', parts.foreR, this.foreR);
+    this.legL = joint('legL', -0.095, HIP, this.root); part('leg', parts.legL, this.legL);
+    this.legR = joint('legR', 0.095, HIP, this.root); part('leg', parts.legR, this.legR);
+    this.shinL = joint('shinL', 0, -THIGH, this.legL); part('shin', parts.shinL, this.shinL);
+    this.shinR = joint('shinR', 0, -THIGH, this.legR); part('shin', parts.shinR, this.shinR);
+    this.stride = L.dress ? 0.55 : 1;                                   // a long skirt keeps the steps short
     this.pos = [0, 0, 0]; this.yaw = 0; this.wantYaw = 0; this.path = null; this.speed = 0; this.pose = 'idle';
     this.phase = p.seed * 6; this.t = p.seed * 50; this.onArrive = null; this.moving = 0;
     this.ang = gaitAngles('idle', 0, 0, 0);
@@ -138,11 +113,15 @@ export class Figure {
   pose2(g, dt) {
     const k = Math.min(1, dt * 12), c = this.ang;
     for (const key in g) c[key] += (g[key] - c[key]) * k;
-    const keep = this.spear ? 0.25 : 1;                                   // a guard keeps hold of his spear
-    this.legL.setLocalEulerAngles(c.legL, 0, 0);
-    this.legR.setLocalEulerAngles(c.legR, 0, 0);
+    const keep = this.spear ? 0.25 : 1, st = this.stride;                 // a guard keeps hold of his spear
+    this.legL.setLocalEulerAngles(c.legL * st, 0, 0);
+    this.legR.setLocalEulerAngles(c.legR * st, 0, 0);
+    this.shinL.setLocalEulerAngles(c.shinL * st, 0, 0);
+    this.shinR.setLocalEulerAngles(c.shinR * st, 0, 0);
     this.armL.setLocalEulerAngles(c.armLx, 0, c.armLz);
     this.armR.setLocalEulerAngles(c.armRx * keep, 0, c.armRz * keep);
+    this.foreL.setLocalEulerAngles(c.foreL, 0, 0);
+    this.foreR.setLocalEulerAngles(c.foreR * keep, 0, 0);
     this.upper.setLocalPosition(0, HIP + c.bob, 0);
     this.upper.setLocalEulerAngles(c.lean, c.sway, 0);
   }

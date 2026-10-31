@@ -61,6 +61,48 @@ export class Geo {
       for (const [p, q, r] of [[A, ab, ca], [ab, B, bc], [ca, bc, C], [ab, bc, ca]]) this.tri(bump(p), bump(q), bump(r), shade(0, sh(norm([p[0] + q[0] + r[0], p[1] + q[1] + r[1], p[2] + q[2] + r[2]]))));
     }
   }
+  // a smooth-shaded surface through rings of [x,y,z] points (every ring the same length, rings in order along the
+  // shape). col: a colour, or fn(x, y, z) -> colour in local coordinates. o: { open: rings are arcs, not closed;
+  // c: a centre the surface faces away from (default: each ring's own centre) }
+  loft(rings, col, o) {
+    const R = rings.length, n = rings[0].length, open = !!(o && o.open), fixed = o && o.c;
+    const fn = typeof col === 'function' ? col : () => col, base = this.p.length / 3;
+    for (let i = 0; i < R; i++) {
+      let cx = 0, cy = 0, cz = 0;
+      for (const v of rings[i]) { cx += v[0]; cy += v[1]; cz += v[2]; }
+      const cen = fixed || [cx / n, cy / n, cz / n];
+      for (let k = 0; k < n; k++) {
+        const v = rings[i][k], a = rings[i][open ? Math.min(k + 1, n - 1) : (k + 1) % n], b = rings[i][open ? Math.max(k - 1, 0) : (k - 1 + n) % n];
+        const u = rings[Math.min(i + 1, R - 1)][k], d = rings[Math.max(i - 1, 0)][k];
+        const ax = a[0] - b[0], ay = a[1] - b[1], az = a[2] - b[2], bx = u[0] - d[0], by = u[1] - d[1], bz = u[2] - d[2];
+        let nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
+        const ox = v[0] - cen[0], oy = fixed ? v[1] - cen[1] : 0, oz = v[2] - cen[2];
+        let l = Math.hypot(nx, ny, nz);
+        if (l < 1e-9) { nx = ox; ny = oy; nz = oz; l = Math.hypot(nx, ny, nz) || 1; }
+        else if (nx * ox + ny * oy + nz * oz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+        nx /= l; ny /= l; nz /= l;
+        const P = this.tf(v), N = this.tn([nx, ny, nz]), c = fn(v[0], v[1], v[2]);
+        this.p.push(P[0], P[1], P[2]); this.n.push(N[0], N[1], N[2]); this.c.push(c[0], c[1], c[2], 1);
+      }
+    }
+    const kmax = open ? n - 1 : n;
+    for (let i = 0; i < R - 1; i++) for (let k = 0; k < kmax; k++) {
+      const a = base + i * n + k, b = base + i * n + (k + 1) % n, c = base + (i + 1) * n + (k + 1) % n, d = base + (i + 1) * n + k;
+      this.i.push(a, b, c, a, c, d);
+    }
+  }
+  // a smooth ellipsoid. o: { lat, lon (rings, points), phi0/phi1 (latitude range, radians), t0/t1 (longitude range,
+  // makes it an open arc), w: fn(phi) -> width scale (a jaw, a skirt) }
+  ellipsoid(cx, cy, cz, rx, ry, rz, col, o) {
+    o = o || {};
+    const lat = o.lat || 7, lon = o.lon || 10, p0 = o.phi0 === undefined ? -Math.PI / 2 : o.phi0, p1 = o.phi1 === undefined ? Math.PI / 2 : o.phi1;
+    const arc = o.t0 !== undefined, rings = [];
+    for (let i = 0; i <= lat; i++) {
+      const ph = p0 + (p1 - p0) * (i / lat), w = (o.w ? o.w(ph) : 1) * Math.max(Math.cos(ph), 0.0001);
+      rings.push(ring(cx, cy + Math.sin(ph) * ry, cz, rx * w, rz * w, lon, arc ? o.t0 : 0, arc ? o.t1 : Math.PI * 2, arc));
+    }
+    this.loft(rings, col, { open: arc, c: [cx, cy, cz] });
+  }
   get count() { return this.i.length / 3; }
   // into a mesh for the device
   mesh(pc, device) {
@@ -88,4 +130,11 @@ export function vcMaterial(pc, opts) {
   if (opts && opts.cull === false) m.cull = pc.CULLFACE_NONE;
   m.update();
   return m;
+}
+
+// a ring of n points about (cx, cy, cz): k = 0 is the front (-z), turning towards +x. Closed, or an open arc t0..t1.
+export function ring(cx, cy, cz, rx, rz, n, t0, t1, open) {
+  const a = t0 === undefined ? 0 : t0, b = t1 === undefined ? Math.PI * 2 : t1, out = [];
+  for (let k = 0; k < n; k++) { const t = a + (b - a) * (k / (open ? n - 1 : n)); out.push([cx + Math.sin(t) * rx, cy, cz - Math.cos(t) * rz]); }
+  return out;
 }
