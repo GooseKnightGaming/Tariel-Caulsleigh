@@ -518,7 +518,7 @@ function act() {
       sleeping = false;
       const m = morning(nights, STORY);
       for (const n of m.notes) addNote(STORY, n.id, n.text, clock.day);
-      banner(m.title, m.sub); setObjective(m.objective); hint(m.line, 6000); saveStory();
+      banner(m.title, m.sub); setObjective(m.objective); hint(m.line, 6000); saveStory(); saveGame();
     }, 1400);
   }, 1300);
 }
@@ -701,6 +701,27 @@ app.on('update', (dt) => {
   }
 });
 
+// ── saving: where she is in the three nights, so a closed page (or a phone) never loses the story ───────────────
+function loadGame() { try { const o = JSON.parse(localStorage.getItem('tariel.save.v1') || 'null'); return o && typeof o.nights === 'number' && o.pos ? o : null; } catch (e) { return null; } }
+function saveGame() {
+  if (mode !== 'free' || !walker || sleeping) return;
+  try { localStorage.setItem('tariel.save.v1', JSON.stringify({ nights, day: clock.day, hour: clock.hour, who, pos: walker.pos.map((v) => Math.round(v * 100) / 100), yaw: walker.yaw })); } catch (e) { /* fine */ }
+}
+function resumeGame(sv) {
+  const t0 = performance.now();
+  const wait = setInterval(() => {
+    if (mode !== 'free' && performance.now() - t0 < 20000) return;
+    clearInterval(wait);
+    nights = sv.nights; clock.day = sv.day; clock.hour = sv.hour;
+    walker.pos = sv.pos.slice(); if (typeof sv.yaw === 'number') walker.yaw = sv.yaw;
+    if (sv.who && sv.who !== who) become(sv.who);
+    if (town) town.snap(clock.hour, Math.min(2, nights));
+    setObjective(nights >= 3 ? 'The Trenite is complete. (Chapter One goes on in later builds.)' : 'Night ' + NIGHT[nights] + ' of the Trenite: Stanlech is yours to learn. Sleep at the tavern again tonight.');
+    arrived = true; hint('Back in Stanlech.', 3000);
+  }, 200);
+}
+setInterval(saveGame, 8000);
+addEventListener('pagehide', saveGame);
 // ── the start ─────────────────────────────────────────────────────────────
 $('ver').textContent = VERSION;
 pauseWiring(); applySettings();
@@ -710,9 +731,16 @@ pauseWiring(); applySettings();
   $('loading').classList.add('gone');
   $('begin').disabled = false;
   $('begin').textContent = 'Begin';
+  const saved = loadGame();
+  if (saved) {
+    $('begin').textContent = 'Continue · day ' + saved.day + ', night ' + Math.min(3, saved.nights + 1);
+    $('newgame').classList.remove('gone');
+    $('newgame').addEventListener('click', () => { try { localStorage.removeItem('tariel.save.v1'); localStorage.removeItem('tariel.story.v1'); } catch (e) { /* fine */ } location.reload(); });
+  }
   $('begin').addEventListener('click', () => {
     if (canvas.requestPointerLock) canvas.requestPointerLock();
-    startOpening();
+    if (saved) { startOpening(); step = SCRIPT.length - 2; waiting = false; next(); resumeGame(saved); }
+    else startOpening();
   });
   $('skip').addEventListener('click', () => { startOpening(); step = SCRIPT.length - 2; waiting = false; next(); });
 })();
