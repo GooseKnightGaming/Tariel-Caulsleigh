@@ -2,7 +2,7 @@
 // and the floors you stand on inside houses. Pure (tested in node).
 // A solid is an upright box turned yaw about y: centre (x, z), half-sizes (hx, hz), from y0 to y1.
 
-import { buildings, wallCells, trees, STOREY, PLACES, TAVERN_ROOM } from './world.js';
+import { buildings, wallCells, trees, stalls, STOREY, PLACES, TAVERN_ROOM } from './world.js';
 
 const CELL = 16;
 let INDEX = null, FLOORS = null;
@@ -49,6 +49,11 @@ export function solidList() {
       addBox(out, b, f.lx, f.lz, f.solid[0], f.solid[1], 0, f.solid[2]);
     }
   });
+  // the market stalls: the counter and the four posts of the awning
+  for (const st of stalls()) {
+    addBox(out, st, 0, 0, 1.35, 0.4, -0.5, 1.1);
+    for (const px of [-1.45, 1.45]) for (const pz of [-1.35, 0.55]) addBox(out, st, px, pz, 0.07, 0.07, -0.5, 2.7);
+  }
   // tree trunks
   for (const t of trees()) out.push({ x: t.x, z: t.z, yaw: 0, c: 1, s: 0, hx: 0.3 * t.size, hz: 0.3 * t.size, y0: t.y - 1, y1: t.y + 4 });
   return out;

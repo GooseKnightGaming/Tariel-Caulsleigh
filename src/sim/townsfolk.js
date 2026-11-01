@@ -226,11 +226,9 @@ export function makeFolk() {
       p.blocks = [[0, 'home'], [rr(5.6, 6.2), 'work'], [rr(17.6, 18.4), 'home']];
     } else if (role === 'stall') {
       p.name = 'Stallholder'; p.pose = 'arms';
-      let spot = null;
-      for (let k = 0; k < 24 && !spot; k++) {
-        const a = r() * Math.PI * 2, d = rr(3.0, 5.0), x = well.x + Math.cos(a) * d, z = well.z + Math.sin(a) * d;
-        if (standable(x, z)) spot = [x, z];
-      }
+      const si = ROLES.slice(0, i).filter((q) => q === 'stall').length % W.stalls().length;
+      let spot = W.stallSpot(W.stalls()[si]);                           // behind their own stall's counter
+      if (!standable(spot[0], spot[1])) spot = nearestFree(spot[0], spot[1], 2.5) || spot;
       p.work = [{ spot: spot || p.mouth, face: [well.x, well.z] }];
       p.blocks = soc(rr(6.8, 7.6), rr(16.8, 17.6), sociable, rr(21.2, 22.8));
     } else {

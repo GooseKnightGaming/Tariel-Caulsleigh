@@ -203,6 +203,19 @@ export function buildings() {
   buildings.cache = out;
   return out;
 }
+// the market stalls round the well: a counter facing the well, a stallholder's room behind, an awning over
+// (local frame as for houses: +z points out of the front, which here is towards the well)
+export function stalls() {
+  if (stalls.cache) return stalls.cache;
+  const wp = fromRiver(0, -105);
+  stalls.cache = [[-8.5, -97, 'veg'], [8.5, -97, 'cheese'], [0, -118, 'cloth']].map(([s, n, kind]) => {
+    const [x, z] = fromRiver(s, n);
+    return { x, z, y: heightAt(x, z), yaw: Math.atan2(wp[0] - x, wp[1] - z), kind, w: 2.7 };
+  });
+  return stalls.cache;
+}
+// where a stallholder stands (behind the counter), and what is out in front of it
+export function stallSpot(st) { const c = Math.cos(st.yaw), s = Math.sin(st.yaw); return [st.x - 0.95 * s, st.z - 0.95 * c]; }
 // a house's walls, cell by cell: [{ side: 'front'|'back'|'left'|'right', i, lx, lz, rot, door }]
 // (local frame: x across the front, z out of the front; rot turns the kit's wall, which faces +z)
 export function wallCells(b) {

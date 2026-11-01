@@ -152,6 +152,33 @@ function wellInto(g, b) {
   g.box(0.85, 0.9, -0.08, 1.0, 2.6, 0.08, [0.30, 0.22, 0.15]);
   g.box(-1.0, 2.5, -0.1, 1.0, 2.62, 0.1, [0.30, 0.22, 0.15]);
 }
+// a market stall: a wooden counter, four posts, a striped awning, and its goods laid out
+function stallInto(g, st) {
+  const wood = [0.46, 0.34, 0.21], woodd = [0.34, 0.25, 0.16];
+  const cloth = { veg: [[0.62, 0.20, 0.16], [0.90, 0.86, 0.74]], cheese: [[0.22, 0.38, 0.50], [0.90, 0.86, 0.74]], cloth: [[0.60, 0.46, 0.14], [0.90, 0.86, 0.74]] }[st.kind];
+  g.at(st.x, st.y - 0.05, st.z, st.yaw);
+  g.box(-1.35, 0, -0.4, 1.35, 1.0, 0.4, { top: wood, side: woodd });
+  g.box(-1.4, 1.0, -0.45, 1.4, 1.06, 0.45, wood);
+  for (const px of [-1.45, 1.45]) for (const pz of [-1.35, 0.55]) g.box(px - 0.06, 0, pz - 0.06, px + 0.06, pz < 0 ? 2.75 : 2.35, pz + 0.06, woodd);
+  // the awning: slanted, in stripes, with a scalloped front
+  for (let k = 0; k < 10; k++) {
+    const x0 = -1.65 + k * 0.33, x1 = x0 + 0.33, c = cloth[k % 2];
+    g.quad([x0, 2.35, 0.75], [x1, 2.35, 0.75], [x1, 2.76, -1.45], [x0, 2.76, -1.45], c);
+    g.quad([x0, 2.35, 0.75], [x1, 2.35, 0.75], [x1 - 0.04, 2.14, 0.76], [x0 + 0.04, 2.14, 0.76], c);
+  }
+  // goods on the counter
+  if (st.kind === 'veg') {
+    for (let k = 0; k < 3; k++) { g.box(-1.1 + k * 0.78, 1.06, -0.2, -0.45 + k * 0.78, 1.26, 0.25, woodd); for (let j = 0; j < 4; j++) g.ellipsoid(-0.95 + k * 0.78 + (j % 2) * 0.2, 1.30, -0.05 + (j >> 1) * 0.2, 0.09, 0.08, 0.09, [[0.78, 0.22, 0.14], [0.45, 0.62, 0.22], [0.82, 0.58, 0.16]][k], { lat: 3, lon: 6 }); }
+  } else if (st.kind === 'cheese') {
+    for (let k = 0; k < 4; k++) for (let j = 0; j < 2 + (k % 2); j++) g.ellipsoid(-1.0 + k * 0.66, 1.15 + j * 0.15, 0, 0.27, 0.08, 0.27, j % 2 ? [0.92, 0.78, 0.36] : [0.86, 0.70, 0.28], { lat: 3, lon: 10 });
+  } else {
+    for (let k = 0; k < 4; k++) for (let j = 0; j < 3; j++) g.box(-1.2 + k * 0.62, 1.06 + j * 0.1, -0.22, -0.7 + k * 0.62, 1.16 + j * 0.1, 0.24, [[0.62, 0.16, 0.14], [0.22, 0.34, 0.52], [0.78, 0.68, 0.30], [0.30, 0.45, 0.26]][(k + j) % 4]);
+  }
+  // sacks and a crate behind
+  g.ellipsoid(1.0, 0.3, -1.0, 0.32, 0.30, 0.28, [0.72, 0.62, 0.42], { lat: 4, lon: 8 });
+  g.ellipsoid(-1.05, 0.28, -1.05, 0.28, 0.28, 0.26, [0.66, 0.56, 0.38], { lat: 4, lon: 8 });
+  g.box(-0.3, 0, -1.2, 0.35, 0.55, -0.75, woodd);
+}
 function bridgeInto(g) {
   const a = W.BRIDGE.from, b = W.BRIDGE.to, steps = 14, half = W.BRIDGE.w / 2;
   const yaw = Math.atan2(b[0] - a[0], b[1] - a[1]);
@@ -179,6 +206,7 @@ export function buildTowns(pc, app, list) {
     // houses, the tavern and the posts are built from the village kit (village.js)
     if (b.kind === 'well') wellInto(g, b);
   }
+  for (const st of W.stalls()) stallInto(g, st);
   bridgeInto(g);
   const e = new pc.Entity('towns');
   e.addComponent('render', { meshInstances: [new pc.MeshInstance(g.mesh(pc, app.graphicsDevice), vcMaterial(pc, { cull: false }))], castShadows: true, receiveShadows: true });

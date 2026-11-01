@@ -153,7 +153,7 @@ notes already require.
    (Q); a pause menu; the rider on horseback; the bridge walkable.
    **T0.1.2** (built) — debug line; doors (E); traits (K) and gear & bag (I) in the pause menu; the Mark of Kern
    (Rhys's design: the triple spiral in its arc, on the left foot); Thiah's legs; the rider astride.
-2. **T0.2** (built, first pass) — Stanlech alive: ten townsfolk (keeper, guards, stallholders, villagers) on daily routines by the clock, finding their own way round the town, drawn in code, with placeholder names and a few placeholder lines each (press E beside one to talk). Tariel and Thiah are drawn in code too. Still to come: real names, faces, clothes, schedules and dialogue (Rhys), market stalls, and proper conversation (T0.3).
+2. **T0.2** (built, first pass) — Stanlech alive: ten townsfolk (keeper, guards, stallholders, villagers) on daily routines by the clock, finding their own way round the town, drawn in code, with placeholder names and a few placeholder lines each (press E beside one to talk). Tariel and Thiah are drawn in code too. Three market stalls (greens, cheese, cloth) stand round the well, each with its stallholder behind the counter. Still to come: real names, faces, clothes, schedules and dialogue (Rhys), and proper conversation (T0.3).
 3. **T0.3** — conversation; Elar; the Thiah / Tariel switch.
 4. **T0.4** — combat (fists, sword, bow); the bar fight.
 5. **T0.5** — the Trenite clock and the Punk mystery; the third night.
