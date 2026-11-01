@@ -40,6 +40,7 @@ export class Convo {
   // she answers with choice i
   pick(i) {
     const c = this.choices()[i]; if (!c) return false;
+    this.act = c.act || null;
     if (c.set) Object.assign(this.state.flags, c.set);
     if (c.note) addNote(this.state, c.note[0], c.note[1], this.ctx.day);
     if (c.go) this.go(c.go); else { this.done = true; this.node = null; }

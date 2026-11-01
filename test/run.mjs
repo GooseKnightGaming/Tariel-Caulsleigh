@@ -202,6 +202,24 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
   ok(wins > 80 && losses > 80 && money !== 100, 'Threot is a real game: wins ' + wins + ', losses ' + losses);
   const t2 = new Table(rng, 3, 10); t2.stand(); ok(t2.purse === 10 + t2.result * 3, 'the purse follows the result');
 }
+// trade: stalls and the keeper sell, purses empty, bags fill
+{
+  const { GOODS, waresFor, buy } = await import('../src/sim/trade.js');
+  const { newStory, Convo, check } = await import('../src/sim/dialogue.js');
+  const { scriptFor } = await import('../src/sim/story.js');
+  const folk = makeFolk(), sellers = folk.filter((p) => waresFor(p).length);
+  ok(sellers.length >= 4, 'the keeper and the stallholders sell');
+  ok(folk.every((p) => waresFor(p).every((id) => GOODS[id])), 'every ware is a known good');
+  const bag = []; let pu = 5;
+  let r = buy(pu, bag, 'bread'); pu = r.purse; r = buy(pu, bag, 'bread'); pu = r.purse;
+  ok(pu === 3 && bag.length === 1 && bag[0].qty === 2, 'two loaves: 2 dinar, one stack');
+  ok(!buy(2, bag, 'cloth').ok && buy(2, bag, 'cloth').purse === 2, 'cannot buy what you cannot afford');
+  const st = newStory(), seller = sellers[0], sc = scriptFor(seller, { face: 'thiah', nights: 0, day: 1, hour: 12 }, st);
+  ok(check(sc, 'start').bad.length === 0, 'a seller\'s talk is whole');
+  const c = new Convo(sc, { face: 'thiah', nights: 0, day: 1, hour: 12 }, st);
+  const ask = c.choices().findIndex((x) => /selling|can I have/.test(x.text)); c.pick(ask); c.pick(0);
+  ok(c.act && c.act[0] === 'buy' && GOODS[c.act[1]], 'picking a ware asks for a purchase');
+}
 // the mornings after: each night brings its news, and it all lands in the journal
 {
   const { morning } = await import('../src/sim/story.js');

@@ -76,6 +76,7 @@ const PERSONAL = {
 };
 
 function folkScript(p, ctx) {
+  const wares = waresFor(p);
   const st = STAGE(ctx), role = TOPICS[p.role] ? p.role : 'villager', T = TOPICS[role], G = GREET[role];
   const who = p.who;
   const line = (entry) => say(entry, ctx);
@@ -96,6 +97,14 @@ function folkScript(p, ctx) {
   if (per && ctx.nights >= per.from) {
     menu.push({ text: per.ask, go: 't_personal' });
     script.t_personal = { who, line: per.text[ctx.face], note: per.note ? NOTE[per.note] : undefined, choices: menu };
+  }
+  if (wares.length) {
+    menu.push({ text: p.role === 'keeper' ? 'What can I have?' : 'What are you selling?', go: 't_shop' });
+    const shop = [];
+    script.t_shop = { who, line: p.role === 'keeper' ? 'Ale, stew and bread. Pay as you take.' : 'Have a look. Prices are fair, and fixed.', choices: shop };
+    for (const id of wares) shop.push({ text: GOODS[id].name + ' - ' + GOODS[id].price + ' dinar', go: 't_bought', act: ['buy', id] });
+    shop.push({ text: 'Not now.', go: 'start' });
+    script.t_bought = { who, line: (c, state) => state.shopmsg || 'Done.', choices: shop };
   }
   menu.push({ text: 'Goodbye.' });
   script.start = { who, line: G[ctx.face][st], choices: menu };
@@ -164,6 +173,7 @@ function changerScript(p, ctx) {
 }
 
 // everything a person might say to her now: a script for the engine (sim/dialogue.js)
+import { GOODS, waresFor } from './trade.js';
 export function scriptFor(p, ctx, state) {
   if (p.role === 'elar') return elarScript(p, ctx, state);
   if (p.role === 'harper') return harperScript(p, ctx);

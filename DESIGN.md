@@ -157,7 +157,7 @@ notes already require.
 3. **T0.3** — conversation; Elar; the Thiah / Tariel switch.
 4. **T0.4** — combat (fists, sword, bow); the bar fight.
 5. **T0.5** — the Trenite clock and the Punk mystery; the third night. *(Started: each morning brings news into the journal, worse each time; the third morning ends the Trenite and points north. Draft text, Rhys to rewrite.)*
-6. **T0.6** — coin, trade and investing in Stanlech; the tavern games (once Rhys has described them).
+6. **T0.6** — coin, trade and investing in Stanlech *(started: stallholders and the keeper sell goods for dinar via talk; Threot at the tavern table; draft prices)*; the tavern games (once Rhys has described them).
 7. **T1.0** — Chapter One complete, start to finish.
 
 ## 7. Open questions for Rhys
