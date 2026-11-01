@@ -4,7 +4,7 @@
 import * as pc from 'playcanvas';
 import * as W from '../world/world.js';
 import { Walker, groundAt } from '../sim/walker.js';
-import { Clock, skyAt } from '../sim/sky.js';
+import { Clock, skyAt, daylight } from '../sim/sky.js';
 import { buildGround, buildRiver, buildTrees, buildTowns, buildSky, buildLamps } from './scene.js';
 import { loadBody, Actor, HORSE } from './actor.js';
 import { CAST, SCRIPT, OBJECTIVE, LANG } from './opening.js';
@@ -18,6 +18,7 @@ import { Convo, newStory, addNote } from '../sim/dialogue.js';
 import { scriptFor, morning } from '../sim/story.js';
 import { buy as buyGoodRaw } from '../sim/trade.js';
 import { breakUp } from '../sim/combat.js';
+import { makeAudio } from './audio.js';
 import { Table, RUNES, RUNE_NAMES, rank } from '../sim/threot.js';
 import { Figure, THIAH, TARIEL } from './figure.js';
 
@@ -254,6 +255,7 @@ window.addEventListener('keydown', (e) => {
     else if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); if (!convo.choices().length) talkKey('next'); }
     return;
   }
+  if (e.code === 'KeyM') { const m = audio.toggle(); hint(m ? 'Sound off.' : 'Sound on.', 1500); }
   if (e.code === 'KeyF' && mode === 'free') tryBreakUp();
   if (e.code === 'KeyJ' && mode !== 'title') { pause(true); drawJournal(); $('pausepage').dataset.page = 'journal'; }
   if (e.code === 'KeyQ' && mode === 'free') become(who === 'tariel' ? 'thiah' : 'tariel');
@@ -384,6 +386,10 @@ function gameKey(act, i) {
 function buyGood(bag, id) { const r = buyGoodRaw(purse(), bag, id); if (r.ok) { STORY.purse = r.purse; saveStory(); } return r; }
 function closeGame() { gameTable = null; $('game').classList.add('gone'); saveStory(); }
 // ── events: things that happen on their own, whether or not she is there ───────────────────────────────────────
+const audio = makeAudio();
+const s0daylight = () => daylight(clock.hour);
+addEventListener('keydown', () => audio.start(), { once: false });
+addEventListener('pointerdown', () => audio.start());
 let brawl = null, shadow = null;
 // the third night: for a quarter of a minute the lamps gutter and the room goes quiet. Nothing is shown; he is never shown.
 function shadowEvent(dt, h) {
@@ -627,6 +633,7 @@ app.on('update', (dt) => {
   for (const k in cast) if (cast[k].visible) cast[k].update(dt);
   if (town) { if (clock.scale > 1) town.snap(clock.hour, Math.min(2, nights)); else town.update(dt, clock.hour, Math.min(2, nights)); }   // hurried time: they keep up by jumping
   events(dt);
+  { const inside = inTavern(walker.pos[0], walker.pos[2]); const hr = clock.hour; audio.update(dt, { inside, night: Math.min(1, Math.max(0, 1 - s0daylight())), harper: hr >= 17.5 && hr < 22.5 && !(brawl), hush: !!shadow || !!brawl }); }
   if (mode === 'free' && !convo && !gameTable) { nearby(); elarNoticesHer(); }
   updateDoors(dt);
   debugLine(dt);
