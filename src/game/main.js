@@ -384,10 +384,22 @@ function gameKey(act, i) {
 function buyGood(bag, id) { const r = buyGoodRaw(purse(), bag, id); if (r.ok) { STORY.purse = r.purse; saveStory(); } return r; }
 function closeGame() { gameTable = null; $('game').classList.add('gone'); saveStory(); }
 // ── events: things that happen on their own, whether or not she is there ───────────────────────────────────────
-let brawl = null;
+let brawl = null, shadow = null;
+// the third night: for a quarter of a minute the lamps gutter and the room goes quiet. Nothing is shown; he is never shown.
+function shadowEvent(dt, h) {
+  if (!shadow && clock.day === 3 && h >= 21.6 && h < 22.2 && !STORY.flags.shadow_done && inTavern(walker.pos[0], walker.pos[2])) {
+    shadow = { t: 0 }; STORY.flags.shadow_done = true;
+    hint('The lamps lean as if a door had opened. No door has. The harper\'s hand stops on the strings.', 7000);
+  } else if (shadow) {
+    shadow.t += dt;
+    if (shadow.t > 7 && !shadow.said) { shadow.said = true; hint(who === 'thiah' ? 'Someone near you says, very low, "Don\'t look at the window." You look. There is only your own face in the glass.' : '"My lady," the guard says quietly, "I would not go out tonight."', 7000); addNote(STORY, 'shadow_night', 'Third night, the tavern: the lamps guttered and the room went quiet as if something had stood outside the door. Nobody would say what.', clock.day); }
+    if (shadow.t > 16) shadow = null;
+  }
+}
 function events(dt) {
   if (!town || paused || sleeping || mode === 'title') return;
   const h = clock.hour;
+  shadowEvent(dt, h);
   if (!brawl && clock.day === 1 && h >= 21.3 && h < 21.9 && !STORY.flags.brawl_done) {
     // the first night: two friends at the tavern fall on each other for no reason either can give
     const pair = town.inside(inTavern).filter((s) => s.p.role === 'villager' || s.p.role === 'stall');
@@ -649,7 +661,7 @@ app.on('update', (dt) => {
   light.light.color = sunUp ? new pc.Color(s.sunCol[0], s.sunCol[1], s.sunCol[2]) : new pc.Color(0.55, 0.62, 0.8);
   light.light.intensity = sunUp ? s.sunI * Math.min(1, s.sun[1] * 6 + 0.15) : s.moonI * 1.6;
   app.scene.ambientLight = new pc.Color(s.ambient[0], s.ambient[1], s.ambient[2]);
-  if (lampsRig) lampsRig.update(1 - Math.min(1, s.d * 2.2));
+  if (lampsRig) lampsRig.update((1 - Math.min(1, s.d * 2.2)) * (shadow ? Math.max(0.15, 0.55 + 0.4 * Math.sin(shadow.t * 9) * Math.exp(-shadow.t / 9)) : 1));
   if (tavernLight) tavernLight.light.intensity = 0.6 + 2.2 * (1 - s.d);
   const fc = [s.horizon[0] * 0.6 + s.zenith[0] * 0.15 + 0.25 * s.d, s.horizon[1] * 0.6 + s.zenith[1] * 0.15 + 0.25 * s.d, s.horizon[2] * 0.6 + s.zenith[2] * 0.15 + 0.26 * s.d];
   app.scene.fog.color = new pc.Color(fc[0], fc[1], fc[2]);
