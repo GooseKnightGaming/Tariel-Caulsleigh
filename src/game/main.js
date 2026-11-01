@@ -17,6 +17,7 @@ import { roleLabel, inTavern, walkable } from '../sim/townsfolk.js';
 import { Convo, newStory, addNote } from '../sim/dialogue.js';
 import { scriptFor, morning } from '../sim/story.js';
 import { buy as buyGoodRaw } from '../sim/trade.js';
+import { breakUp } from '../sim/combat.js';
 import { Table, RUNES, RUNE_NAMES, rank } from '../sim/threot.js';
 import { Figure, THIAH, TARIEL } from './figure.js';
 
@@ -253,6 +254,7 @@ window.addEventListener('keydown', (e) => {
     else if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); if (!convo.choices().length) talkKey('next'); }
     return;
   }
+  if (e.code === 'KeyF' && mode === 'free') tryBreakUp();
   if (e.code === 'KeyJ' && mode !== 'title') { pause(true); drawJournal(); $('pausepage').dataset.page = 'journal'; }
   if (e.code === 'KeyQ' && mode === 'free') become(who === 'tariel' ? 'thiah' : 'tariel');
   if ((e.code === 'KeyI' || e.code === 'Tab') && mode !== 'title') { e.preventDefault(); pause(true); drawGear(); $('pausepage').dataset.page = 'gear'; }
@@ -405,6 +407,20 @@ function events(dt) {
       if (inTavern(walker.pos[0], walker.pos[2])) hint('It stops as quickly as it started. Neither man can say why.', 5000);
     } else { town.face(brawl.a, brawl.b.fig.pos); town.face(brawl.b, brawl.a.fig.pos); }
   }
+}
+// F: step between the two men. Strength and presence decide it; a failure costs her wind.
+function tryBreakUp() {
+  if (!brawl || convo || gameTable || sleeping) return;
+  const near = [brawl.a, brawl.b].some((q) => Math.hypot(q.fig.pos[0] - walker.pos[0], q.fig.pos[2] - walker.pos[2]) < 2.4);
+  if (!near) { hint('Too far to step between them.', 2500); return; }
+  const r = breakUp(character.traits, Math.random);
+  walker.stamina = Math.max(0, walker.stamina - r.cost);
+  if (r.ok) {
+    town.release(brawl.a); town.release(brawl.b); brawl.t = 99;
+    addNote(STORY, 'brawl_stopped', 'I stepped between the two men and they stopped as if a hand had been taken off them. Neither knew why they had been fighting.', clock.day);
+    hint(who === 'tariel' ? 'You step between them: "Enough." They stop at once. Nobody argues with the Unterofficer.' : 'You push between them and they stop, panting, ashamed and puzzled.', 6000);
+  } else hint('You step in and take an elbow for it. They go on fighting.', 4000);
+  saveStory();
 }
 // Elar, lodging at the tavern, speaks first the first time each of her faces comes near him
 function elarNoticesHer() {

@@ -202,6 +202,19 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
   ok(wins > 80 && losses > 80 && money !== 100, 'Threot is a real game: wins ' + wins + ', losses ' + losses);
   const t2 = new Table(rng, 3, 10); t2.stand(); ok(t2.purse === 10 + t2.result * 3, 'the purse follows the result');
 }
+// fists: strong and quick beats weak, and the numbers behave
+{
+  const { fighter, fight, blow, breakUp } = await import('../src/sim/combat.js');
+  let seed = 7; const rng = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  let strongWins = 0, N = 300;
+  for (let i = 0; i < N; i++) { const a = fighter('a', { strength: 4, agility: 3, endurance: 3 }), b = fighter('b'); if (fight(a, b, rng).winner === 'a') strongWins++; }
+  ok(strongWins > N * 0.8, 'a trained fighter beats a novice most of the time (' + strongWins + '/' + N + ')');
+  const x = fighter('x'), y = fighter('y'); const r = fight(x, y, rng); ok(r.rounds >= 1 && r.rounds <= 20, 'a scrap ends');
+  ok(blow(fighter('a'), fighter('b'), () => 0.99) === 0, 'a high roll misses');
+  const lo = breakUp({ strength: 1, presence: 1 }, () => 0.5).chance, hi = breakUp({ strength: 4, presence: 4 }, () => 0.5).chance;
+  ok(hi > lo && lo >= 0.25 && hi <= 0.9, 'strength and presence help stepping in');
+  ok(breakUp({}, () => 0).ok && !breakUp({}, () => 0.99).ok && breakUp({}, () => 0.99).cost > breakUp({}, () => 0).cost, 'failing costs more wind');
+}
 // trade: stalls and the keeper sell, purses empty, bags fill
 {
   const { GOODS, waresFor, buy } = await import('../src/sim/trade.js');

@@ -155,7 +155,7 @@ notes already require.
    (Rhys's design: the triple spiral in its arc, on the left foot); Thiah's legs; the rider astride.
 2. **T0.2** (built, first pass) — Stanlech alive: ten townsfolk (keeper, guards, stallholders, villagers) on daily routines by the clock, finding their own way round the town, drawn in code, with placeholder names and a few placeholder lines each (press E beside one to talk). Tariel and Thiah are drawn in code too. Three market stalls (greens, cheese, cloth) stand round the well, each with its stallholder behind the counter. Still to come: real names, faces, clothes, schedules and dialogue (Rhys), and proper conversation (T0.3).
 3. **T0.3** — conversation; Elar; the Thiah / Tariel switch.
-4. **T0.4** — combat (fists, sword, bow); the bar fight.
+4. **T0.4** — combat (fists, sword, bow); the bar fight. *(Started: `sim/combat.js` fist-fight resolution by traits; in the first-night brawl, F steps between the men — strength and presence decide, failure costs wind. Sword, bow and a real fistfight are still to come.)*
 5. **T0.5** — the Trenite clock and the Punk mystery; the third night. *(Started: each morning brings news into the journal, worse each time; the third morning ends the Trenite and points north. Draft text, Rhys to rewrite.)*
 6. **T0.6** — coin, trade and investing in Stanlech *(started: stallholders and the keeper sell goods for dinar via talk; Threot at the tavern table; draft prices)*; the tavern games (once Rhys has described them).
 7. **T1.0** — Chapter One complete, start to finish.
