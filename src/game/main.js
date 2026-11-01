@@ -16,6 +16,7 @@ import { Town } from './townsfolk.js';
 import { roleLabel, inTavern, walkable } from '../sim/townsfolk.js';
 import { Convo, newStory, addNote } from '../sim/dialogue.js';
 import { scriptFor } from '../sim/story.js';
+import { Table, RUNES, RUNE_NAMES, rank } from '../sim/threot.js';
 import { Figure, THIAH, TARIEL } from './figure.js';
 
 const VERSION = 'T0.2';
@@ -233,6 +234,13 @@ window.addEventListener('mousemove', (e) => {
 window.addEventListener('wheel', (e) => { cam.want = Math.max(2.2, Math.min(14, cam.want * (e.deltaY > 0 ? 1.12 : 0.9))); }, { passive: true });
 window.addEventListener('keydown', (e) => {
   keys.add(e.code);
+  if (gameTable) {
+    if (e.code === 'Escape' || e.code === 'KeyQ') { e.preventDefault(); closeGame(); return; }
+    if (/^(Digit|Numpad)[1-3]$/.test(e.code)) gameKey('hold', Number(e.code.slice(-1)) - 1);
+    else if (e.code === 'Space' || e.code === 'KeyR') { e.preventDefault(); gameKey('roll'); }
+    else if (e.code === 'Enter' || e.code === 'KeyE' || e.code === 'KeyS') gameKey('stand');
+    return;
+  }
   if (e.code === 'Escape' || e.code === 'KeyP') {
     if (!$('map').classList.contains('gone')) { toggleMap(); return; }
     if (mode !== 'title' && performance.now() - pausedAt > 400) pause(!paused);
@@ -328,14 +336,49 @@ function nearby() {
     }
     if (offerDoor) offer = 'door';
   }
+  if (!offer && nearGame()) offer = 'play';
   offerPerson = null;
   if (!offer && town) { offerPerson = town.nearest(walker.pos[0], walker.pos[2], 2.3); if (offerPerson) offer = 'talk'; }
   if (chat && (!chat.s.fig.visible || Math.hypot(chat.s.fig.pos[0] - walker.pos[0], chat.s.fig.pos[2] - walker.pos[2]) > 4)) endChat();
   $('prompt').classList.toggle('gone', !offer || paused);
   if (offer === 'sleep') $('prompt').innerHTML = '<kbd>E</kbd> Sleep until morning';
   else if (offer === 'talk') $('prompt').innerHTML = '<kbd>E</kbd> Talk to ' + offerPerson.p.who + ' (' + roleLabel(offerPerson.p) + ')';
+  else if (offer === 'play') $('prompt').innerHTML = '<kbd>E</kbd> Play Threot at the table (' + STAKE + ' dinar a hand)';
   else if (offer === 'door') $('prompt').innerHTML = '<kbd>E</kbd> ' + (OPEN.has(offerDoor.id) ? 'Close' : 'Open') + ' the door' + (offerDoor.b.kind === 'tavern' ? ' (the tavern)' : '');
 }
+// ── Threot at the tavern's table ─────────────────────────────────────────────────────────────────────────────
+const STAKE = 2;
+let gameTable = null, tableSpot = null;
+const purse = () => (typeof STORY.purse === 'number' ? STORY.purse : 24);
+function nearGame() {
+  if (!tableSpot) { const [x, z] = W.toWorld(W.tavern(), 1.9, 1.8); tableSpot = { x, z, y: W.tavern().y }; }
+  return Math.hypot(walker.pos[0] - tableSpot.x, walker.pos[2] - tableSpot.z) < 2.4 && Math.abs(walker.pos[1] - tableSpot.y) < 1.2;
+}
+function startGame() {
+  if (purse() < STAKE) { hint('You cannot cover the stake - a Threot hand is ' + STAKE + ' dinar.', 3500); return; }
+  gameTable = new Table(Math.random, STAKE, purse()); keys.clear(); drawGame();
+}
+function drawGame() {
+  const g = gameTable; if (!g) return;
+  $('game').classList.remove('gone');
+  $('gamepurse').textContent = 'Purse: ' + g.purse + ' dinar - a hand is ' + STAKE + ' dinar each';
+  const die = (v, i, held, hid) => '<div class="die' + (held ? ' held' : '') + (hid ? ' hidden' : '') + '" data-i="' + i + '">' + (hid ? '?' : RUNES[v - 1] + '<small>' + RUNE_NAMES[v - 1] + '</small>') + '</div>';
+  $('gamedice').innerHTML = g.dice.map((v, i) => die(v, i, g.held[i], false)).join('');
+  $('gameopp').innerHTML = (g.opp || [0, 0, 0]).map((v, i) => die(v, i, false, !g.opp)).join('');
+  for (const d of document.querySelectorAll('#gamedice .die')) d.onclick = () => gameKey('hold', Number(d.dataset.i));
+  const me = rank(g.dice);
+  $('gamemsg').textContent = g.phase === 'done' ? g.summary : 'Your hand: ' + me.name + (g.rollsLeft ? ' - ' + g.rollsLeft + ' roll' + (g.rollsLeft > 1 ? 's' : '') + ' left' : '');
+  $('gamehelp').textContent = g.phase === 'done' ? 'Enter: another hand - Esc: leave the table' : (g.rollsLeft === 3 ? '' : '1 2 3 keep a die - Space rolls the rest - Enter: stand') ;
+  STORY.purse = g.purse;
+}
+function gameKey(act, i) {
+  const g = gameTable; if (!g) return;
+  if (act === 'hold') g.hold(i);
+  else if (act === 'roll') g.roll();
+  else if (act === 'stand') { if (g.phase === 'done') { if (g.purse < STAKE) return closeGame(); gameTable = new Table(Math.random, STAKE, g.purse); } else g.stand(); }
+  drawGame();
+}
+function closeGame() { gameTable = null; $('game').classList.add('gone'); saveStory(); }
 // ── events: things that happen on their own, whether or not she is there ───────────────────────────────────────
 let brawl = null;
 function events(dt) {
@@ -416,6 +459,8 @@ function endTalk() {
 function endChat() { endTalk(); }
 function act() {
   if (convo) return;
+  if (gameTable) return;
+  if (offer === 'play') { startGame(); return; }
   if (offer === 'talk' && offerPerson) { startTalk(offerPerson); return; }
   if (offer === 'door' && offerDoor) { useDoor(offerDoor); return; }
   if (offer !== 'sleep' || sleeping) return;
@@ -447,8 +492,8 @@ function act() {
 let character = CH.newCharacter();
 try { character = CH.load(localStorage.getItem('tariel.character')); } catch (e) { /* a fresh one */ }
 function drawJournal() {
-  const j = $('journal'); j.innerHTML = '';
-  if (!STORY.notes.length) { j.innerHTML = '<div class="note">Nothing yet. Talk to people; what matters is written here.</div>'; return; }
+  const j = $('journal'); j.innerHTML = '<div class="note"><b>Purse:</b> ' + purse() + ' dinar</div>';
+  if (!STORY.notes.length) { j.innerHTML += '<div class="note">Nothing yet. Talk to people; what matters is written here.</div>'; return; }
   for (const n of STORY.notes) { const d = document.createElement('div'); d.className = 'note'; d.textContent = 'Day ' + n.day + ' - ' + n.text; j.append(d); }
 }
 function applyTraits() {
@@ -533,7 +578,7 @@ app.on('update', (dt) => {
   clock.scale = keys.has('KeyT') ? 60 : 1;
   if (mode !== 'title' && !sleeping) clock.step(dt);
   // Tariel
-  if (mode === 'free' && !paused && !sleeping && !convo && $('map').classList.contains('gone')) {
+  if (mode === 'free' && !paused && !sleeping && !convo && !gameTable && $('map').classList.contains('gone')) {
     walker.step(dt, readInput(), cam.yaw);
     walker.events.length = 0;
   }
@@ -553,7 +598,7 @@ app.on('update', (dt) => {
   for (const k in cast) if (cast[k].visible) cast[k].update(dt);
   if (town) { if (clock.scale > 1) town.snap(clock.hour, Math.min(2, nights)); else town.update(dt, clock.hour, Math.min(2, nights)); }   // hurried time: they keep up by jumping
   events(dt);
-  if (mode === 'free' && !convo) { nearby(); elarNoticesHer(); }
+  if (mode === 'free' && !convo && !gameTable) { nearby(); elarNoticesHer(); }
   updateDoors(dt);
   debugLine(dt);
   // the camera, behind and above her; never under the ground

@@ -185,6 +185,23 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
 { const folk = makeFolk(); let calm = 0, scared = 0;
   for (const p of folk) { if (plan(p, 20, 0).where !== 'home') calm++; if (plan(p, 20, 2).where !== 'home') scared++; }
   ok(scared < calm, 'afraid, fewer people are out at eight in the evening (' + calm + ' calm, ' + scared + ' afraid)'); }
+// Threot, the rune-dice game
+{
+  const { rank, compare, aiKeep, Table } = await import('../src/sim/threot.js');
+  ok(rank([4, 4, 4]).rank === 3 && rank([4, 5, 6]).rank === 2 && rank([2, 2, 5]).rank === 1 && rank([1, 3, 6]).rank === 0, 'Threot hands rank: three alike, run, pair, nothing');
+  ok(compare([6, 6, 6], [5, 5, 5]) === 1 && compare([1, 2, 3], [2, 2, 6]) === 1 && compare([3, 3, 1], [3, 3, 2]) === -1 && compare([2, 4, 6], [6, 4, 2]) === 0, 'Threot hands compare, with ties to the higher runes');
+  ok(aiKeep([5, 5, 2]).filter(Boolean).length === 2 && aiKeep([3, 4, 6]).filter(Boolean).length >= 2, 'the other player keeps pairs and near-runs');
+  let seed = 7; const rng = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  let wins = 0, losses = 0, money = 100;
+  for (let g = 0; g < 400; g++) {
+    const t = new Table(rng, 2, money);
+    t.hold(0); t.roll(); t.stand();
+    if (t.phase !== 'done' || t.dice.some((v) => v < 1 || v > 6) || t.opp.some((v) => v < 1 || v > 6)) { ok(false, 'a game runs to its end'); break; }
+    money = t.purse; if (t.result > 0) wins++; else if (t.result < 0) losses++;
+  }
+  ok(wins > 80 && losses > 80 && money !== 100, 'Threot is a real game: wins ' + wins + ', losses ' + losses);
+  const t2 = new Table(rng, 3, 10); t2.stand(); ok(t2.purse === 10 + t2.result * 3, 'the purse follows the result');
+}
 // conversation: every script is whole, and a talk runs from start to end
 {
   const { newStory, Convo, check } = await import('../src/sim/dialogue.js');
