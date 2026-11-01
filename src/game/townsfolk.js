@@ -26,6 +26,7 @@ export class Town {
   // put everyone where the hour wants them, with no walking (the start, a night's sleep, hurried time)
   snap(hour, fear) {
     for (const s of this.people) {
+      if (s.hold) continue;
       const pl = plan(s.p, hour, fear);
       if (s.key === pl.key && !s.fig.path) continue;
       s.key = pl.key; s.target = pl; s.queued = false;
@@ -37,6 +38,7 @@ export class Town {
   // every frame: anyone whose hour has turned sets off; one route is started a frame, so none of them hitches
   update(dt, hour, fear) {
     for (const s of this.people) {
+      if (s.hold) continue;
       const pl = plan(s.p, hour, fear);
       if (pl.key !== s.key) { s.key = pl.key; s.target = pl; if (!s.queued) { s.queued = true; this.queue.push(s); } }
     }
@@ -71,6 +73,11 @@ export class Town {
     for (const s of this.people) { if (!s.fig.visible) continue; const d = Math.hypot(s.fig.pos[0] - x, s.fig.pos[2] - z); if (d < bd) { bd = d; best = s; } }
     return best;
   }
+  // an event takes someone over for a while (a brawl): they stand where they are and do this instead of their day
+  hold(s, pose, toward) { s.hold = true; s.fig.path = null; s.fig.pose = pose; if (toward) s.fig.face(toward[0], toward[2]); }
+  release(s) { s.hold = false; s.key = null; s.queued = false; }
+  // people out and about who are inside the tavern now
+  inside(inTavern) { return this.people.filter((s) => s.fig.visible && inTavern(s.fig.pos[0], s.fig.pos[2])); }
   // they turn to her
   face(s, to) { s.fig.face(to[0], to[2]); }
   // (old) she speaks to them: they turn to her and answer

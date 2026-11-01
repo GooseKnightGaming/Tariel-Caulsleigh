@@ -4,7 +4,7 @@
 // Conventions: a figure faces -z, so a positive x angle swings a hanging limb FORWARD. Arms hang from the shoulders:
 // a positive z angle swings the LEFT arm inward across the chest (the right arm takes the negative).
 
-export const POSES = ['idle', 'arms', 'talk'];
+export const POSES = ['idle', 'arms', 'talk', 'brawl'];
 // metres of ground to one radian of the walk cycle: a full cycle (two steps) is about 1.4 m
 export const STRIDE = 1.4 / (Math.PI * 2);
 
@@ -17,6 +17,7 @@ export function gaitAngles(pose, phase, speed, t) {
   let aLx = 3 * breath, aLz = 4, aRx = -3 * breath, aRz = -4, fL = 10, fR = 10;
   if (pose === 'arms') { aLx = 46 + 2 * breath; aLz = 16; aRx = 50 + 2 * breath; aRz = -16; fL = 70; fR = 72; }
   else if (pose === 'talk') { aLx = 18 + 6 * Math.sin(t * 1.9); aLz = 6; aRx = 30 + 12 * Math.sin(t * 2.6); aRz = -12; fR = 60 + 22 * Math.sin(t * 2.6); fL = 25; o.sway = 4 * Math.sin(t * 0.9); }
+  else if (pose === 'brawl') { const w = Math.sin(t * 7.3), v = Math.sin(t * 6.1 + 1.7); aLx = 48 + 26 * w; aLz = 12; aRx = 48 - 26 * w; aRz = -12; fL = 55 + 25 * v; fR = 55 - 25 * v; o.sway = 9 * Math.sin(t * 4.2); o.lean = 7 + 3 * w; }
   // walking: legs and arms swing against each other, faster strides swing wider
   const amp = Math.min(34, 10 + speed * 9), s = Math.sin(phase);
   o.legL = amp * s * walk; o.legR = -amp * s * walk;

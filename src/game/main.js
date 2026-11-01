@@ -13,8 +13,8 @@ import { buildVillage, DOORS, updateDoors } from './village.js';
 import { OPEN, doors, blocked, clearTo } from '../world/solids.js';
 import * as CH from '../sim/character.js';
 import { Town } from './townsfolk.js';
-import { roleLabel } from '../sim/townsfolk.js';
-import { Convo, newStory } from '../sim/dialogue.js';
+import { roleLabel, inTavern, walkable } from '../sim/townsfolk.js';
+import { Convo, newStory, addNote } from '../sim/dialogue.js';
 import { scriptFor } from '../sim/story.js';
 import { Figure, THIAH, TARIEL } from './figure.js';
 
@@ -336,6 +336,31 @@ function nearby() {
   else if (offer === 'talk') $('prompt').innerHTML = '<kbd>E</kbd> Talk to ' + offerPerson.p.who + ' (' + roleLabel(offerPerson.p) + ')';
   else if (offer === 'door') $('prompt').innerHTML = '<kbd>E</kbd> ' + (OPEN.has(offerDoor.id) ? 'Close' : 'Open') + ' the door' + (offerDoor.b.kind === 'tavern' ? ' (the tavern)' : '');
 }
+// ── events: things that happen on their own, whether or not she is there ───────────────────────────────────────
+let brawl = null;
+function events(dt) {
+  if (!town || paused || sleeping || mode === 'title') return;
+  const h = clock.hour;
+  if (!brawl && clock.day === 1 && h >= 21.3 && h < 21.9 && !STORY.flags.brawl_done) {
+    // the first night: two friends at the tavern fall on each other for no reason either can give
+    const pair = town.inside(inTavern).filter((s) => s.p.role === 'villager' || s.p.role === 'stall');
+    if (pair.length >= 2) {
+      const [a, b] = pair; brawl = { a, b, t: 0 }; STORY.flags.brawl_done = true;
+      const mx = (a.fig.pos[0] + b.fig.pos[0]) / 2, mz = (a.fig.pos[2] + b.fig.pos[2]) / 2, dx = b.fig.pos[0] - a.fig.pos[0], dz = b.fig.pos[2] - a.fig.pos[2], d = Math.hypot(dx, dz) || 1;
+      const pa = [mx - (dx / d) * 0.45, mz - (dz / d) * 0.45], pb = [mx + (dx / d) * 0.45, mz + (dz / d) * 0.45];
+      if (walkable(pa[0], pa[1]) && walkable(pb[0], pb[1])) { a.fig.place(pa[0], pa[1]); b.fig.place(pb[0], pb[1]); }
+      town.hold(a, 'brawl', b.fig.pos); town.hold(b, 'brawl', a.fig.pos);
+      if (inTavern(walker.pos[0], walker.pos[2])) { addNote(STORY, 'brawl_seen', 'I saw it start: two men who had been laughing together, and then nothing between the laughing and the fists.', clock.day); hint('Two men at the bar go for each other - a stool goes over, the harper stops mid-note.', 6000); }
+      else hint('A shout and a crash from the tavern.', 4000);
+    }
+  } else if (brawl) {
+    brawl.t += dt;
+    if (brawl.t > 30 || h >= 21.95 || h < 21.2) {
+      town.release(brawl.a); town.release(brawl.b); brawl = null;
+      if (inTavern(walker.pos[0], walker.pos[2])) hint('It stops as quickly as it started. Neither man can say why.', 5000);
+    } else { town.face(brawl.a, brawl.b.fig.pos); town.face(brawl.b, brawl.a.fig.pos); }
+  }
+}
 // Elar, lodging at the tavern, speaks first the first time each of her faces comes near him
 function elarNoticesHer() {
   if (!town || sleeping || paused) return;
@@ -527,6 +552,7 @@ app.on('update', (dt) => {
   if (horse && horse.visible) horse.update(dt);
   for (const k in cast) if (cast[k].visible) cast[k].update(dt);
   if (town) { if (clock.scale > 1) town.snap(clock.hour, Math.min(2, nights)); else town.update(dt, clock.hour, Math.min(2, nights)); }   // hurried time: they keep up by jumping
+  events(dt);
   if (mode === 'free' && !convo) { nearby(); elarNoticesHer(); }
   updateDoors(dt);
   debugLine(dt);
