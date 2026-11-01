@@ -33,7 +33,7 @@ foot (Rhys's design, tools/art); the rider astride his horse; no invisible wall 
 the guard posts' barriers laid straight along the road.
 
 Controls: **WASD** move · **mouse** look · **wheel** zoom · **Shift** run · **C** walk/jog · **Space**
-jump · **Q** Tariel / Thiah · **E** use · **I** gear · **K** character · **M** map · hold **T** to hurry time · **Esc** pause · **F3** debug line · **H** help. A gamepad works too.
+jump · **Q** Tariel / Thiah · **E** use · **I** gear · **K** character · **M** map · hold **T** to hurry time · **Esc** pause · **F3** debug line · **H** help · **J** journal · **F** step between a fight · **N** sound on/off. A gamepad works too. **On a phone or tablet** the game shows a thumb stick (left), a look-drag area (right) and buttons (E, Jump, Run, Q, F, J, I, Map, pause). The game saves as you play; the title screen offers **Continue**.
 
 Building: `npm install`, `npm test`, `node build.mjs` (writes `index.html` and `game.js` here, from `src/`).
 
