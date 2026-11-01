@@ -391,7 +391,7 @@ function gameKey(act, i) {
   else if (act === 'stand') { if (g.phase === 'done') { if (g.purse < STAKE) return closeGame(); gameTable = new Table(Math.random, STAKE, g.purse); } else g.stand(); }
   drawGame();
 }
-function buyGood(bag, id) { const r = buyGoodRaw(purse(), bag, id); if (r.ok) { STORY.purse = r.purse; saveStory(); } return r; }
+function buyGood(bag, id) { const r = buyGoodRaw(purse(), bag, id); if (r.ok) { STORY.purse = r.purse; saveStory(); applyTraits(); } return r; }
 function closeGame() { gameTable = null; $('game').classList.add('gone'); saveStory(); }
 // ── events: things that happen on their own, whether or not she is there ───────────────────────────────────────
 const audio = makeAudio();
@@ -494,6 +494,15 @@ function drawConvo() {
 function talkKey(i) {
   if (!convo) return;
   if (i === 'next') convo.next(); else if (!convo.pick(i)) return;
+  if (convo.act && convo.act[0] === 'pay') {
+    const n = convo.act[1]; convo.act = null;
+    if (purse() >= n) { STORY.purse = purse() - n; saveStory(); } else convo.go('nopay');
+  }
+  if (convo.act && convo.act[0] === 'change') {
+    convo.act = null; const coin = character.bag.find((b) => b.id === 'coin' && b.qty > 0);
+    if (!coin) convo.go('nochange');
+    else { coin.qty--; if (!coin.qty) character.bag.splice(character.bag.indexOf(coin), 1); STORY.purse = purse() + 20; STORY.shopmsg = 'One librar becomes twenty dinar. Your purse: ' + STORY.purse + '.'; saveStory(); applyTraits(); }
+  }
   if (convo.act && convo.act[0] === 'buy') {
     const r = buyGood(character.bag, convo.act[1]); STORY.shopmsg = (r.ok ? 'Taken: ' : 'No: ') + r.msg; convo.act = null;
   }

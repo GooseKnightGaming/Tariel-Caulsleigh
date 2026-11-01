@@ -134,7 +134,8 @@ ok(!tooDeep(mid[0], mid[1]), 'the bridge can be walked');
   ok(CH.spend(c, 'agility', 1) && c.traits.agility === 2 && c.points === CH.START_POINTS - 1, 'a point spent');
   ok(!CH.spend(c, 'wits', -1), 'not below 1');
   ok(CH.effects(c).speed > 1, 'agility quickens her');
-  const back = CH.load(CH.save(c));
+  c.bag.push({ id: 'x', name: 'X', qty: 2, kind: 'gear', about: '' });
+  const back = CH.load(CH.save(c)); ok(back.bag.some((b) => b.id === 'x' && b.qty === 2), 'the bag survives a save');
   ok(back.traits.agility === 2 && back.points === c.points, 'traits are kept');
 }
 

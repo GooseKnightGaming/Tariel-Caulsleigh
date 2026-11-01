@@ -149,7 +149,12 @@ function elarScript(p, ctx, state) {
 // ── the rest of the new faces ────────────────────────────────────────────────────────────────────────────────────
 function harperScript(p, ctx) {
   const who = p.who, st = STAGE(ctx), S = {}, menu = [
-    { text: 'What are you playing?', go: 'song' }, { text: 'You must hear everything, playing here.', go: 'hear' }, { text: 'Goodbye.' }];
+    { text: 'What are you playing?', go: 'song' }, { text: 'Play it for me. (1 dinar)', go: 'v1', act: ['pay', 1] }, { text: 'You must hear everything, playing here.', go: 'hear' }, { text: 'Goodbye.' }];
+  // an original drovers' song, three verses, the last only after the town has begun to be afraid
+  S.v1 = { who, line: '(He plays.)  "Grey heron at the ford, grey heron on the stone, / you have watched the drovers cross it and you watched them cross alone. / Tell me, heron, tell me, what the river takes and keeps - / It takes the ones who hurry, and the ones who sleep."', go: 'v2' };
+  S.v2 = { who, line: '"Grey heron in the reeds, grey heron in the rain, / the bridge is built of timber but the ford is built of stone, / and every road to Stanlech comes down to it alone."  (He lets the last note hang.)', go: st >= 1 ? 'v3' : 'start' };
+  S.v3 = { who, line: '"Grey heron, grey heron, why have you left the ford?" / "There is something on the water that is neither man nor lord."  (He stops. "That verse is new," he says, and does not say who taught it to him.)', go: 'start', note: NOTE.brawl };
+  S.nopay = { who, line: 'He smiles and shakes his head. "Another time, when your purse is fuller."', go: 'start' };
   S.song = { who, line: 'An old drovers\' tune, "The Heron at the Ford." It has forty verses. The tavern prefers six.', choices: menu };
   S.hear = { who, line: st === 0 ? 'Everything and nothing. Drunk men tell harpers their troubles. I tell them nothing back.' : st === 1 ? 'Last night the tune went wrong in my hands. Two men who had been laughing began to fight, and I played on, because I did not know what else to do.' : 'The room is half empty. I play to the ones who stay. I dare not say it is bad for my purse, with Edda Wyke dead.', choices: menu, note: st === 1 ? NOTE.brawl : st === 2 ? NOTE.edda : undefined };
   S.start = { who, line: 'A song, or just a seat by the fire?', choices: menu };
@@ -165,7 +170,9 @@ function traderScript(p, ctx) {
 }
 function changerScript(p, ctx) {
   const who = p.who, S = {}, menu = [
-    { text: 'What do you change?', go: 'what' }, { text: 'How do the coins stand?', go: 'rate' }, { text: 'Goodbye.' }];
+    { text: 'What do you change?', go: 'what' }, { text: 'How do the coins stand?', go: 'rate' }, { text: 'Change a librar for 20 dinar.', go: 'changed', act: ['change'] }, { text: 'Goodbye.' }];
+  S.changed = { who, line: (c, state) => state.shopmsg || 'Done.', choices: menu };
+  S.nochange = { who, line: 'You have no librar in your bag to change, friend.', choices: menu };
   S.start = { who, line: ctx.face === 'tariel' ? 'Unterofficer. Saes librar, I presume. A fair cut for a fair bridge.' : 'Coin? I change any honest coin, barefoot or booted.', choices: menu };
   S.what = { who, line: 'Saes and Gwalas librar, Kern kregyn, Mittland avér, Janhar mark, Lunesir skast. I weigh them all.', choices: menu };
   S.rate = { who, line: 'A librar is worth twenty dinar, and a dinar twelve assar. Everything else, I\'ll tell you the day you want it.', choices: menu };
