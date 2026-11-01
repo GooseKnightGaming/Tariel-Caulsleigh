@@ -24,9 +24,9 @@ export class Town {
   }
 
   // put everyone where the hour wants them, with no walking (the start, a night's sleep, hurried time)
-  snap(hour) {
+  snap(hour, fear) {
     for (const s of this.people) {
-      const pl = plan(s.p, hour);
+      const pl = plan(s.p, hour, fear);
       if (s.key === pl.key && !s.fig.path) continue;
       s.key = pl.key; s.target = pl; s.queued = false;
       this.arrive(s, pl, true);
@@ -35,9 +35,9 @@ export class Town {
   }
 
   // every frame: anyone whose hour has turned sets off; one route is started a frame, so none of them hitches
-  update(dt, hour) {
+  update(dt, hour, fear) {
     for (const s of this.people) {
-      const pl = plan(s.p, hour);
+      const pl = plan(s.p, hour, fear);
       if (pl.key !== s.key) { s.key = pl.key; s.target = pl; if (!s.queued) { s.queued = true; this.queue.push(s); } }
     }
     const s = this.queue.shift();

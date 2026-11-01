@@ -203,6 +203,19 @@ export function buildings() {
   buildings.cache = out;
   return out;
 }
+// street lamps: on posts by the well, the tavern, both ends of the bridge and the guard posts. `lit` ones also cast light.
+export function lamps() {
+  if (lamps.cache) return lamps.cache;
+  const out = [], add = (x, z, lit) => out.push({ x, z, y: heightAt(x, z), lit: !!lit });
+  const well = fromRiver(0, -105);
+  add(well[0] + 3.2, well[1] + 2.2, true); add(well[0] - 3.2, well[1] - 2.2);
+  const t = buildings().find((b) => b.kind === 'tavern'), tf = toWorld(t, 3.4, 5.4);
+  add(tf[0], tf[1], false);
+  add(BRIDGE.from[0] + 2.6, BRIDGE.from[1], false); add(BRIDGE.to[0] - 2.6, BRIDGE.to[1], false);
+  const mid = [(BRIDGE.from[0] + BRIDGE.to[0]) / 2, (BRIDGE.from[1] + BRIDGE.to[1]) / 2]; add(mid[0], mid[1], true);
+  for (const b of buildings()) if (b.kind === 'post') { const q = toWorld(b, b.w / 2 + 1.6, b.d / 2 + 1.0); add(q[0], q[1], false); }
+  lamps.cache = out; return out;
+}
 // the market stalls round the well: a counter facing the well, a stallholder's room behind, an awning over
 // (local frame as for houses: +z points out of the front, which here is towards the well)
 export function stalls() {

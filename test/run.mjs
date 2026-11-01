@@ -181,6 +181,10 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
 { const folk = makeFolk(), names = new Set(folk.map((p) => p.who));
   ok(names.size === folk.length && folk.every((p) => typeof p.who === 'string' && p.who.length > 2), 'everyone has a name of their own');
   ok(folk.every((p) => [0, 1, 2, 3].every((n) => typeof greeting(p, 12, n) === 'string' && greeting(p, 12, n).length > 5)), 'everyone has something to say'); }
+// fear changes the day: more people at home in the evening, guards on watch later
+{ const folk = makeFolk(); let calm = 0, scared = 0;
+  for (const p of folk) { if (plan(p, 20, 0).where !== 'home') calm++; if (plan(p, 20, 2).where !== 'home') scared++; }
+  ok(scared < calm, 'afraid, fewer people are out at eight in the evening (' + calm + ' calm, ' + scared + ' afraid)'); }
 // conversation: every script is whole, and a talk runs from start to end
 {
   const { newStory, Convo, check } = await import('../src/sim/dialogue.js');

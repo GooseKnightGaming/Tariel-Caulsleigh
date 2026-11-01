@@ -5,7 +5,7 @@ import * as pc from 'playcanvas';
 import * as W from '../world/world.js';
 import { Walker, groundAt } from '../sim/walker.js';
 import { Clock, skyAt } from '../sim/sky.js';
-import { buildGround, buildRiver, buildTrees, buildTowns, buildSky } from './scene.js';
+import { buildGround, buildRiver, buildTrees, buildTowns, buildSky, buildLamps } from './scene.js';
 import { loadBody, Actor, HORSE } from './actor.js';
 import { CAST, SCRIPT, OBJECTIVE, LANG } from './opening.js';
 import { RegionMap } from './map.js';
@@ -51,7 +51,7 @@ const clock = new Clock();
 const map = new RegionMap();
 const cam = { yaw: 0, pitch: 0.18, dist: 5.2, want: 5.2 };
 let walker = null, tariel = null, sky = null, river = null, town = null;
-let tavernLight = null;
+let tavernLight = null, lampsRig = null;
 const selves = { tariel: null, thiah: null };     // Tariel, and Thiah Kirdotr: the one you are now is `tariel`
 let who = 'tariel', horse = null, nights = 0, paused = false;
 const cast = {};
@@ -73,6 +73,7 @@ async function makeWorld() {
   buildTrees(pc, app, W.trees());
   say('Building Stanlech…'); await frame();
   buildTowns(pc, app, W.buildings());
+  lampsRig = buildLamps(pc, app);
   await buildVillage(pc, app).catch((e) => console.error('[village]', e));
   // the tavern's candles: a warm light inside, lit as the day goes
   {
@@ -401,7 +402,7 @@ function act() {
   setTimeout(() => {
     if (clock.hour >= 18) clock.day++;
     clock.hour = 7;
-    if (town) town.snap(clock.hour);
+    if (town) town.snap(clock.hour, Math.min(2, nights));
     nights++;
     setTimeout(() => {
       $('fade').classList.remove('on'); setTimeout(() => $('fade').classList.remove('long'), 1500);
@@ -525,7 +526,7 @@ app.on('update', (dt) => {
   }
   if (horse && horse.visible) horse.update(dt);
   for (const k in cast) if (cast[k].visible) cast[k].update(dt);
-  if (town) { if (clock.scale > 1) town.snap(clock.hour); else town.update(dt, clock.hour); }   // hurried time: they keep up by jumping
+  if (town) { if (clock.scale > 1) town.snap(clock.hour, Math.min(2, nights)); else town.update(dt, clock.hour, Math.min(2, nights)); }   // hurried time: they keep up by jumping
   if (mode === 'free' && !convo) { nearby(); elarNoticesHer(); }
   updateDoors(dt);
   debugLine(dt);
@@ -560,6 +561,7 @@ app.on('update', (dt) => {
   light.light.color = sunUp ? new pc.Color(s.sunCol[0], s.sunCol[1], s.sunCol[2]) : new pc.Color(0.55, 0.62, 0.8);
   light.light.intensity = sunUp ? s.sunI * Math.min(1, s.sun[1] * 6 + 0.15) : s.moonI * 1.6;
   app.scene.ambientLight = new pc.Color(s.ambient[0], s.ambient[1], s.ambient[2]);
+  if (lampsRig) lampsRig.update(1 - Math.min(1, s.d * 2.2));
   if (tavernLight) tavernLight.light.intensity = 0.6 + 2.2 * (1 - s.d);
   const fc = [s.horizon[0] * 0.6 + s.zenith[0] * 0.15 + 0.25 * s.d, s.horizon[1] * 0.6 + s.zenith[1] * 0.15 + 0.25 * s.d, s.horizon[2] * 0.6 + s.zenith[2] * 0.15 + 0.26 * s.d];
   app.scene.fog.color = new pc.Color(fc[0], fc[1], fc[2]);

@@ -200,6 +200,31 @@ function bridgeInto(g) {
     g.box(-half - 0.3, 0, -0.9, half + 0.3, (bridgeAt(x, z) || 30) - W.heightAt(x, z) - 0.1, 0.9, [0.48, 0.47, 0.44]);
   }
 }
+// street lamps: a post and a lantern; the lanterns glow by night, and a few cast real light
+export function buildLamps(pc, app) {
+  const posts = new Geo(), glow = new Geo(), wood = [0.28, 0.21, 0.15], iron = [0.16, 0.16, 0.17];
+  for (const l of W.lamps()) {
+    posts.at(l.x, l.y - 0.1, l.z, 0);
+    posts.box(-0.06, 0, -0.06, 0.06, 2.55, 0.06, wood); posts.box(-0.05, 2.5, -0.05, 0.28, 2.58, 0.05, wood); posts.box(0.24, 2.18, -0.05, 0.3, 2.5, 0.05, iron);
+    posts.box(0.14, 2.12, -0.16, 0.40, 2.18, 0.16, iron); posts.box(0.14, 2.48, -0.16, 0.40, 2.56, 0.16, iron);
+    glow.at(l.x, l.y - 0.1, l.z, 0); glow.box(0.17, 2.18, -0.13, 0.37, 2.48, 0.13, [1, 0.8, 0.5]);
+  }
+  const e1 = new pc.Entity('lamp posts'); e1.addComponent('render', { meshInstances: [new pc.MeshInstance(posts.mesh(pc, app.graphicsDevice), vcMaterial(pc, { cull: false }))], castShadows: true, receiveShadows: true });
+  const gm = new pc.StandardMaterial(); gm.diffuse = new pc.Color(0.1, 0.07, 0.04); gm.emissive = new pc.Color(0, 0, 0); gm.update();
+  const e2 = new pc.Entity('lanterns'); e2.addComponent('render', { meshInstances: [new pc.MeshInstance(glow.mesh(pc, app.graphicsDevice), gm)], castShadows: false, receiveShadows: false });
+  app.root.addChild(e1); app.root.addChild(e2);
+  const lights = [];
+  for (const l of W.lamps()) if (l.lit) {
+    const e = new pc.Entity('lamp light'); e.addComponent('light', { type: 'omni', color: new pc.Color(1, 0.74, 0.42), range: 13, intensity: 0, castShadows: false });
+    e.setPosition(l.x + 0.3, l.y + 2.3, l.z); app.root.addChild(e); lights.push(e);
+  }
+  // night: 0 (day) to 1 (dark)
+  return { update(night) {
+    const k = Math.max(0, Math.min(1, night));
+    gm.emissive = new pc.Color(1.0 * k, 0.72 * k, 0.38 * k); gm.update();
+    for (const e of lights) e.light.intensity = 1.4 * k;
+  } };
+}
 export function buildTowns(pc, app, list) {
   const g = new Geo();
   for (const b of list) {

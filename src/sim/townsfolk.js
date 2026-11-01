@@ -270,11 +270,17 @@ export function makeFolk() {
 }
 
 // Where a person should be at an hour: { where, key, spot, face, pose }. `key` changes when they should move.
-export function plan(p, hour) {
-  const h = HOUR(hour);
+// fear (0 none, 1 uneasy after the first night, 2 afraid after the second) changes the day: fewer drink out, stalls and
+// workers go home early, and the guards keep the watch late.
+export function plan(p, hour, fear) {
+  const h = HOUR(hour), f = fear || 0;
   let cur = p.blocks[p.blocks.length - 1];                    // before the first block: the last one, from yesterday
   for (const b of p.blocks) if (b[0] <= h) cur = b;
-  const where = cur[1];
+  let where = cur[1];
+  const common = p.role === 'villager' || p.role === 'stall';
+  if (f >= 1 && common && where === 'tavern' && p.seed > (f >= 2 ? 0.2 : 0.55)) where = 'home';
+  if (f >= 2 && common && where === 'work' && h >= 15.5) where = 'home';
+  if (f >= 2 && p.role === 'guard' && where === 'home' && h >= 17 && h < 22) where = 'work';
   if (where === 'home') return { where, key: 'home', spot: p.mouth, face: null, pose: 'idle' };
   if (where === 'tavern') return { where, key: 'tavern', spot: p.tavernSpot, face: p.tavernFace, pose: p.seed < 0.5 ? 'talk' : 'arms' };
   const k = p.work.length > 1 ? Math.floor(h + p.offset * 3) % p.work.length : 0;
