@@ -202,6 +202,15 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
   ok(wins > 80 && losses > 80 && money !== 100, 'Threot is a real game: wins ' + wins + ', losses ' + losses);
   const t2 = new Table(rng, 3, 10); t2.stand(); ok(t2.purse === 10 + t2.result * 3, 'the purse follows the result');
 }
+// the mornings after: each night brings its news, and it all lands in the journal
+{
+  const { morning } = await import('../src/sim/story.js');
+  const { newStory, addNote } = await import('../src/sim/dialogue.js');
+  const st = newStory();
+  for (const n of [1, 2, 3]) { const m = morning(n, st); for (const x of m.notes) addNote(st, x.id, x.text, n + 1); ok(m.title && m.sub && m.objective && m.line && m.notes.length, 'morning ' + n + ' is complete'); }
+  ok(st.notes.length === 4 && new Set(st.notes.map((n) => n.id)).size === 4, 'four morning notes, none repeated');
+  ok(/Trenite is done/.test(morning(3, st).title), 'the third morning ends the Trenite');
+}
 // conversation: every script is whole, and a talk runs from start to end
 {
   const { newStory, Convo, check } = await import('../src/sim/dialogue.js');

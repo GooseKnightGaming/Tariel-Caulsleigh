@@ -15,7 +15,7 @@ import * as CH from '../sim/character.js';
 import { Town } from './townsfolk.js';
 import { roleLabel, inTavern, walkable } from '../sim/townsfolk.js';
 import { Convo, newStory, addNote } from '../sim/dialogue.js';
-import { scriptFor } from '../sim/story.js';
+import { scriptFor, morning } from '../sim/story.js';
 import { Table, RUNES, RUNE_NAMES, rank } from '../sim/threot.js';
 import { Figure, THIAH, TARIEL } from './figure.js';
 
@@ -477,13 +477,9 @@ function act() {
     setTimeout(() => {
       $('fade').classList.remove('on'); setTimeout(() => $('fade').classList.remove('long'), 1500);
       sleeping = false;
-      if (nights >= 3) {
-        banner('The Trenite is done', 'Three nights in Stanlech');
-        setObjective('The Trenite is complete. (Chapter One goes on in later builds.)');
-      } else {
-        banner('Morning', 'Night ' + NIGHT[nights - 1] + ' of the Trenite is behind you');
-        setObjective('Day ' + NIGHT[nights] + ' of the Trenite: Stanlech is yours to learn. Sleep at the tavern again tonight.');
-      }
+      const m = morning(nights, STORY);
+      for (const n of m.notes) addNote(STORY, n.id, n.text, clock.day);
+      banner(m.title, m.sub); setObjective(m.objective); hint(m.line, 6000); saveStory();
     }, 1400);
   }, 1300);
 }

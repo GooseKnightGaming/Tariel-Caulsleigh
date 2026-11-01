@@ -174,3 +174,26 @@ export function scriptFor(p, ctx, state) {
 export function roleName(p) {
   return { keeper: 'innkeeper', guard: 'guard', stall: 'stallholder', villager: 'villager', elar: 'lodger', harper: 'harper', trader: 'wool trader', changer: 'money-changer' }[p.role] || 'villager';
 }
+
+// ── the morning after each night: what the town learns while she sleeps (DRAFT text for Rhys to rewrite) ───────────
+// Punk is never named or shown. Each morning is a little worse; the last one tells her it is time to go north.
+export function morning(nights, state) {
+  const day = nights + 1;
+  const told = (id, text) => ({ id, text });
+  if (nights === 1) return {
+    title: 'Morning', sub: 'Night one of the Trenite is behind you',
+    objective: 'Day Two of the Trenite: people are talking. Find out what.',
+    notes: [told('m1', 'Morning, day two: the keeper says the two men from last night remember nothing of the fight. One has not left his bed.')],
+    line: 'The talk over breakfast is all of the fight. Nobody blames the men.' };
+  if (nights === 2) return {
+    title: 'Morning', sub: 'Night two of the Trenite is behind you',
+    objective: 'Day Three of the Trenite: something is wrong in Stanlech. Learn what you can before tonight.',
+    notes: [told('m2', 'Morning, day three: a door on the river lane was found open and the house behind it empty. Nobody saw anyone come or go.'),
+            told('m2b', 'The guards have doubled the watch at the gate. They will not say what they are watching for.')],
+    line: 'The market opens late. Two stalls do not open at all.' };
+  return {
+    title: 'The Trenite is done', sub: 'Three nights in Stanlech',
+    objective: 'The Trenite is complete. Whatever is in Stanlech, it is not finished with it - and it is going north. (Chapter One goes on in later builds.)',
+    notes: [told('m3', 'Morning, day four: the third night is over. A rider came in at dawn from the north with news the keeper will not repeat to me, and a woman in Shappel-ont\'-Laik is dead. Whoever it is, he is ahead of us on the road.')],
+    line: 'You have kept your three nights. Stanlech looks the same as it did, and it is not.' };
+}
