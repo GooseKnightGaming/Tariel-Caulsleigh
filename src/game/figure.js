@@ -26,7 +26,7 @@ export const TARIEL = { id: 91, role: 'tariel', name: 'Tariel', height: 1.62, ti
 export function lookOf(p) {
   const h = (n) => frac(Math.sin((p.id + 1) * 12.9898 + n * 78.233) * 43758.5453);
   const pick = (a, n) => a[Math.floor(h(n) * a.length)];
-  const female = p.role === 'thiah' ? true : p.role === 'tariel' ? true : p.role === 'keeper' ? false : p.role === 'guard' ? p.id % 2 === 0 : h(6) < 0.55;
+  const female = p.role === 'harper' ? true : p.role === 'elar' || p.role === 'trader' || p.role === 'changer' ? false : p.role === 'thiah' ? true : p.role === 'tariel' ? true : p.role === 'keeper' ? false : p.role === 'guard' ? p.id % 2 === 0 : h(6) < 0.55;
   const L = {
     skin: pick(SKIN, 1), hair: pick(HAIR, 2), eyes: pick(EYES, 7), style: female ? (h(3) < 0.5 ? 'braid' : 'long') : (h(3) < 0.5 ? 'short' : 'cap'),
     tunic: p.tint, trousers: pick(TROUSERS, 4), bootCol: [0.20, 0.14, 0.10], extra: null, height: p.height, female, dress: female,
@@ -38,6 +38,10 @@ export function lookOf(p) {
     Object.assign(L, { skin: [0.94, 0.74, 0.62], hair: [0.92, 0.82, 0.30], eyes: [0.30, 0.62, 0.34], style: 'braid', tunic: [0.50, 0.13, 0.11],
       skirt: [0.42, 0.10, 0.09], over: [0.53, 0.14, 0.11], sleeve: [0.52, 0.14, 0.11], belt: [0.27, 0.22, 0.19], barefoot: true, laces: true, puff: true, width: 1.0 });
   }
+  if (p.role === 'elar') { Object.assign(L, { female: false, dress: false, puff: false, laces: false, longSleeve: true, boots: true, style: 'short', hair: [0.16, 0.12, 0.09], skin: [0.84, 0.64, 0.50], tunic: [0.26, 0.28, 0.34], sleeve: [0.26, 0.28, 0.34], skirt: [0.26, 0.28, 0.34], eyes: [0.35, 0.45, 0.55], width: 1.04 }); }
+  if (p.role === 'harper') { Object.assign(L, { female: true, dress: true, puff: true, laces: true, style: 'long', hair: [0.40, 0.18, 0.10], tunic: [0.30, 0.38, 0.52], sleeve: [0.30, 0.38, 0.52], skirt: [0.26, 0.32, 0.46], over: [0.55, 0.45, 0.20], barefoot: false, boots: false }); }
+  if (p.role === 'trader') { Object.assign(L, { female: false, dress: false, puff: false, laces: false, longSleeve: true, boots: true, style: 'cap', hair: [0.50, 0.34, 0.18], cap: [0.40, 0.30, 0.22], width: 1.06 }); }
+  if (p.role === 'changer') { Object.assign(L, { female: false, dress: false, puff: false, laces: false, longSleeve: true, boots: true, style: 'short', hair: [0.62, 0.62, 0.60], extra: 'apron', width: 1.0 }); }
   if (p.role === 'tariel') {
     Object.assign(L, { skin: [0.94, 0.74, 0.62], hair: [0.94, 0.86, 0.30], eyes: [0.28, 0.62, 0.40], style: 'wavy', wreath: true, kit: 'tariel', m: 0.97, width: 0.96,
       tunic: [0.17, 0.23, 0.15], sleeve: [0.19, 0.26, 0.16], skirt: [0.17, 0.15, 0.13], coat: [0.50, 0.53, 0.20], glove: [0.26, 0.19, 0.15], trousers: [0.14, 0.15, 0.12],

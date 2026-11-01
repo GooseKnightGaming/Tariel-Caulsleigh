@@ -9,6 +9,7 @@ import * as W from '../world/world.js';
 import { blocked, doors } from '../world/solids.js';
 import { groundAt, tooDeep, bridgeAt } from './walker.js';
 import { rng } from '../world/noise.js';
+import { scriptFor, roleName } from './story.js';
 
 export const CELL = 0.5;        // the routes' grid, in metres
 export const RADIUS = 0.28;     // a person's width, against walls
@@ -177,7 +178,7 @@ function tavernSpots() {
 export function tavernId() { return W.buildings().indexOf(W.tavern()); }
 
 const TINTS = [[0.55, 0.42, 0.30], [0.35, 0.45, 0.32], [0.50, 0.30, 0.28], [0.30, 0.35, 0.50], [0.55, 0.50, 0.35], [0.40, 0.33, 0.42]];
-export const ROLES = ['keeper', 'guard', 'guard', 'stall', 'stall', 'stall', 'villager', 'villager', 'villager', 'villager'];
+export const ROLES = ['keeper', 'guard', 'guard', 'stall', 'stall', 'stall', 'villager', 'villager', 'villager', 'villager', 'elar', 'harper', 'trader', 'changer'];
 const riverBank = (pt) => (W.riverCoords(pt[0], pt[1]).n >= 0 ? 'szetter' : 'cawel');
 // the day of someone who does not drink at the tavern, and of someone who does
 const soc = (work, leave, sociable, bed) => (sociable ? [[0, 'home'], [work, 'work'], [leave, 'tavern'], [bed, 'home']] : [[0, 'home'], [work, 'work'], [leave, 'home']]);
@@ -186,19 +187,13 @@ const soc = (work, leave, sociable, bed) => (sociable ? [[0, 'home'], [work, 'wo
 // blocks: [[from hour, 'home' | 'work' | 'tavern'], ...], tavernSpot, tavernFace, pose, pace, height, tint, seed }.
 // blocks say where they are from that hour until the next.
 // placeholder names and greetings (Rhys's to replace): who they are, and what they say when spoken to
-const NAMES = ['Hobb Marlow', 'Wenna Carr', 'Dunstan Pell', 'Maud Ashby', 'Garrick Toll', 'Tilda Brook', 'Osric Venn', 'Nell Harker', 'Aldous Fenn', 'Bertha Lisle'];
-const LINES = {
-  keeper: ['Mind the step. Ale, bed or news - I\'ve a little of each.', 'Quiet, for a market day. Sit where you like.', 'We\'re shut to trouble here. Drink up, and keep your knives sheathed.'],
-  guard: ['Move along, miss, nothing to see.', 'Bridge is open to travellers by day. Nights, we like to know who\'s about.', 'Stay out of trouble and we\'ll get along.'],
-  stall: ['Fresh in this morning. Take a look, no charge for looking.', 'Prices are what they are, miss. Times are hard.', 'Barley, cheese, a bit of cloth. What\'ll it be?'],
-  villager: ['Morning. You\'re not from Stanlech, are you?', 'Mind the river, it\'s running high this month.', 'Evening. Is it true folk have gone missing up the valley?'],
-};
-// what person p says to someone who speaks to them at this hour; n picks which of their lines
+const NAMES = ['Hobb Marlow', 'Wenna Carr', 'Dunstan Pell', 'Maud Ashby', 'Garrick Toll', 'Tilda Brook', 'Osric Venn', 'Nell Harker', 'Aldous Fenn', 'Bertha Lisle', 'Elar', 'Ysolde Marr', 'Brannoc Hale', 'Jorrit Vael'];
+// what person p says first to someone who speaks to them (the rest of the talk is in story.js)
 export function greeting(p, hour, n) {
-  const set = LINES[p.role] || LINES.villager;
-  return set[Math.abs((n || 0) + p.id) % set.length];
+  const sc = scriptFor(p, { face: ['thiah', 'tariel'][(n || 0) % 2], nights: Math.min(3, Math.floor((n || 0) / 2)), day: 1, hour }, { flags: {}, notes: [] });
+  const l = sc.start.line; return typeof l === 'function' ? l({}, {}) : l;
 }
-export function roleLabel(p) { return { keeper: 'innkeeper', guard: 'guard', stall: 'stallholder', villager: 'villager' }[p.role] || 'villager'; }
+export function roleLabel(p) { return roleName(p); }
 
 export function makeFolk() {
   const bs = W.buildings(), bridge = W.PLACES.bridge;
@@ -209,7 +204,7 @@ export function makeFolk() {
   ROLES.forEach((role, i) => {
     const r = rng(W.SEED + 700 + i * 31), rr = (a, b) => a + (b - a) * r();
     const p = { id: i, role, seed: r(), offset: r(), pace: rr(1.3, 1.7), height: rr(1.55, 1.85), tint: TINTS[i % TINTS.length], work: [], blocks: [] };
-    if (role === 'keeper') p.home = tid; else p.home = houses[Math.floor(i * houses.length / ROLES.length)].id;
+    if (role === 'keeper') p.home = tid; else p.home = houses[Math.floor(Math.min(i, 9) * houses.length / 10)].id;
     p.mouth = doorMouth(p.home);
     p.bank = riverBank(p.mouth);
     p.who = NAMES[i % NAMES.length];
@@ -218,6 +213,21 @@ export function makeFolk() {
       p.name = 'Innkeeper'; p.pose = 'arms';
       p.work = [{ spot: tav[0] || p.mouth, face }];
       p.blocks = [[0, 'work'], [1, 'home'], [10, 'work']];
+    } else if (role === 'elar' || role === 'harper') {                  // lodgers: the tavern is their home
+      p.home = tid; p.mouth = doorMouth(tid); p.bank = 'cawel';
+      p.name = role === 'elar' ? 'Elar' : 'Harper'; p.pose = role === 'elar' ? 'arms' : 'talk';
+      p.tavernSpot = tav[role === 'elar' ? Math.max(1, tav.length - 2) : Math.min(2, tav.length - 1)] || tav[0];
+      if (role === 'elar') { p.height = 1.80; p.tint = [0.30, 0.30, 0.36]; p.work = [{ spot: p.tavernSpot, face }]; p.blocks = [[0, 'work']]; }
+      else { p.height = 1.62; p.tint = [0.45, 0.28, 0.40]; p.work = [{ spot: p.tavernSpot, face }]; p.blocks = [[0, 'home'], [16.5, 'work'], [23.5, 'home']]; }
+    } else if (role === 'trader') {                                       // wool by the bridge by day, the tavern by evening
+      p.home = tid; p.mouth = doorMouth(tid); p.bank = 'cawel'; p.name = 'Trader'; p.pose = 'arms'; p.height = 1.74; p.tint = [0.40, 0.45, 0.30];
+      const [bx, bz] = W.fromRiver(6, -14), spot = nearestFree(bx, bz, 4) || p.mouth;
+      p.work = [{ spot, face: bridge }]; p.blocks = [[0, 'home'], [8, 'work'], [18, 'tavern'], [22.5, 'home']];
+    } else if (role === 'changer') {                                      // the money-changer, by the Sźetter toll house
+      const post = posts.find(({ b }) => b.style === 'szetter') || posts[0]; p.home = post.id; p.mouth = doorMouth(post.id); p.bank = 'szetter';
+      p.name = 'Money-changer'; p.pose = 'arms'; p.height = 1.70; p.tint = [0.28, 0.32, 0.48];
+      const m = doorMouth(post.id), spot = nearestFree(m[0] - 1.8, m[1], 3) || m;
+      p.work = [{ spot, face: bridge }]; p.blocks = [[0, 'home'], [7, 'work'], [18.5, 'home']];
     } else if (role === 'guard') {
       const post = posts[(i - 1) % posts.length]; p.name = 'Guard'; p.pose = 'idle';
       p.tint = post.b.style === 'szetter' ? [0.34, 0.38, 0.46] : [0.26, 0.40, 0.28];
@@ -246,6 +256,7 @@ export function makeFolk() {
       p.blocks = soc(rr(6.5, 8.0), rr(17.4, 18.6), sociable, rr(21.4, 23.0));
     }
     if (role === 'keeper') p.tavernSpot = p.work[0].spot;
+    else if (p.tavernSpot) { /* set above: a lodger's own place */ }
     else {
       // a place of their own in the tavern: the keeper has the first, the rest take the others in turn
       let k = 1 + (i % Math.max(1, tav.length - 1));

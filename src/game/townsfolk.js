@@ -71,7 +71,9 @@ export class Town {
     for (const s of this.people) { if (!s.fig.visible) continue; const d = Math.hypot(s.fig.pos[0] - x, s.fig.pos[2] - z); if (d < bd) { bd = d; best = s; } }
     return best;
   }
-  // she speaks to them: they turn to her and answer
+  // they turn to her
+  face(s, to) { s.fig.face(to[0], to[2]); }
+  // (old) she speaks to them: they turn to her and answer
   talk(s, to, hour, n) {
     s.fig.face(to[0], to[2]);
     if (!s.fig.path) s.fig.pose = 'talk';

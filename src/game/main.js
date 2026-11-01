@@ -14,6 +14,8 @@ import { OPEN, doors, blocked, clearTo } from '../world/solids.js';
 import * as CH from '../sim/character.js';
 import { Town } from './townsfolk.js';
 import { roleLabel } from '../sim/townsfolk.js';
+import { Convo, newStory } from '../sim/dialogue.js';
+import { scriptFor } from '../sim/story.js';
 import { Figure, THIAH, TARIEL } from './figure.js';
 
 const VERSION = 'T0.2';
@@ -236,6 +238,12 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   if (paused) return;
+  if (convo) {
+    if (/^(Digit|Numpad)[1-9]$/.test(e.code)) talkKey(Number(e.code.slice(-1)) - 1);
+    else if (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); if (!convo.choices().length) talkKey('next'); }
+    return;
+  }
+  if (e.code === 'KeyJ' && mode !== 'title') { pause(true); drawJournal(); $('pausepage').dataset.page = 'journal'; }
   if (e.code === 'KeyQ' && mode === 'free') become(who === 'tariel' ? 'thiah' : 'tariel');
   if ((e.code === 'KeyI' || e.code === 'Tab') && mode !== 'title') { e.preventDefault(); pause(true); drawGear(); $('pausepage').dataset.page = 'gear'; }
   if (e.code === 'KeyK' && mode !== 'title') { pause(true); drawCharacter(); $('pausepage').dataset.page = 'character'; }
@@ -327,6 +335,14 @@ function nearby() {
   else if (offer === 'talk') $('prompt').innerHTML = '<kbd>E</kbd> Talk to ' + offerPerson.p.who + ' (' + roleLabel(offerPerson.p) + ')';
   else if (offer === 'door') $('prompt').innerHTML = '<kbd>E</kbd> ' + (OPEN.has(offerDoor.id) ? 'Close' : 'Open') + ' the door' + (offerDoor.b.kind === 'tavern' ? ' (the tavern)' : '');
 }
+// Elar, lodging at the tavern, speaks first the first time each of her faces comes near him
+function elarNoticesHer() {
+  if (!town || sleeping || paused) return;
+  const flag = who === 'thiah' ? 'elar_thiah' : 'elar_tariel';
+  if (STORY.flags[flag]) return;
+  const s = town.people.find((q) => q.p.role === 'elar');
+  if (s && s.fig.visible && Math.hypot(s.fig.pos[0] - walker.pos[0], s.fig.pos[2] - walker.pos[2]) < 3.0) startTalk(s);
+}
 function useDoor(d) {
   const open = !OPEN.has(d.id);
   if (!open) {
@@ -337,14 +353,44 @@ function useDoor(d) {
   const v = DOORS.get(d.id); if (v) v.want = open ? 1 : 0;
 }
 const NIGHT = ['one', 'two', 'three'];
-let offerPerson = null, chat = null;
-function endChat() { if (chat) { if (!chat.s.fig.path) chat.s.fig.pose = chat.s.p.pose || 'idle'; chat = null; } $('talk').classList.add('gone'); }
+// ── conversation: what the story remembers, and talking (sim/dialogue.js, sim/story.js) ──
+let STORY = newStory();
+try { const raw = JSON.parse(localStorage.getItem('tariel.story.v1') || 'null'); if (raw && raw.flags && raw.notes) STORY = raw; } catch (e) { /* a fresh story */ }
+function saveStory() { try { localStorage.setItem('tariel.story.v1', JSON.stringify(STORY)); } catch (e) { /* fine */ } }
+let offerPerson = null, convo = null, chat = null;
+function startTalk(s) {
+  const ctx = { face: who, nights, day: clock.day, hour: clock.hour };
+  const script = scriptFor(s.p, ctx, STORY);
+  convo = new Convo(script, ctx, STORY, 'start'); chat = { s };
+  town.face(s, walker.pos); keys.clear();
+  for (const a of [s.fig]) if (!a.path) a.pose = 'talk';
+  tariel.pose = 'idle';
+  drawConvo();
+}
+function drawConvo() {
+  if (!convo || convo.done || !convo.node) return endTalk();
+  const v = convo.view(), who2 = v.who === chat.s.p.who || v.who === 'Elar' ? v.who : v.who;
+  $('talk').classList.remove('gone');
+  $('talkname').textContent = who2 + ' (' + roleLabel(chat.s.p) + ')';
+  $('talklang').textContent = v.lang ? '[' + v.lang + ']' : '';
+  $('talkline').textContent = v.line;
+  const box = $('talkchoices'); box.innerHTML = '';
+  v.choices.forEach((t, i) => { const d = document.createElement('div'); d.innerHTML = '<b>' + (i + 1) + '</b>'; d.append(t); d.onclick = () => talkKey(i); box.append(d); });
+  $('talkmore').textContent = v.choices.length ? 'press 1-' + v.choices.length : 'E to go on';
+}
+function talkKey(i) {
+  if (!convo) return;
+  if (i === 'next') convo.next(); else if (!convo.pick(i)) return;
+  if (convo.done) endTalk(); else drawConvo();
+}
+function endTalk() {
+  if (chat && !chat.s.fig.path) chat.s.fig.pose = chat.s.p.pose || 'idle';
+  convo = null; chat = null; $('talk').classList.add('gone'); $('talkchoices').innerHTML = ''; saveStory();
+}
+function endChat() { endTalk(); }
 function act() {
-  if (offer === 'talk' && offerPerson) {
-    const s = offerPerson, n = chat && chat.s === s ? chat.n + 1 : 0, r = town.talk(s, walker.pos, clock.hour, n);
-    chat = { s, n }; showLine(r.name + ' (' + r.role + ')', r.line, null); $('talkmore').textContent = 'E to speak again';
-    return;
-  }
+  if (convo) return;
+  if (offer === 'talk' && offerPerson) { startTalk(offerPerson); return; }
   if (offer === 'door' && offerDoor) { useDoor(offerDoor); return; }
   if (offer !== 'sleep' || sleeping) return;
   if (who === 'tariel') { hint("Tariel Caulsleigh can't be seen taking a bed here. Become Thiah first (Q).", 5000); return; }
@@ -374,6 +420,11 @@ function act() {
 // ── her traits and her bag ────────────────────────────────────────────────
 let character = CH.newCharacter();
 try { character = CH.load(localStorage.getItem('tariel.character')); } catch (e) { /* a fresh one */ }
+function drawJournal() {
+  const j = $('journal'); j.innerHTML = '';
+  if (!STORY.notes.length) { j.innerHTML = '<div class="note">Nothing yet. Talk to people; what matters is written here.</div>'; return; }
+  for (const n of STORY.notes) { const d = document.createElement('div'); d.className = 'note'; d.textContent = 'Day ' + n.day + ' - ' + n.text; j.append(d); }
+}
 function applyTraits() {
   if (walker) walker.mods = CH.effects(character);
   try { localStorage.setItem('tariel.character', CH.save(character)); } catch (e) { /* fine */ }
@@ -417,6 +468,7 @@ document.addEventListener('pointerlockchange', () => {
 let pausedAt = 0;
 function pauseWiring() {
   $('p-resume').onclick = () => pause(false);
+  $('p-journal').onclick = () => { drawJournal(); $('pausepage').dataset.page = 'journal'; };
   $('p-controls').onclick = () => { $('pausepage').dataset.page = 'controls'; };
   $('p-gear').onclick = () => { drawGear(); $('pausepage').dataset.page = 'gear'; };
   $('p-character').onclick = () => { drawCharacter(); $('pausepage').dataset.page = 'character'; };
@@ -455,7 +507,7 @@ app.on('update', (dt) => {
   clock.scale = keys.has('KeyT') ? 60 : 1;
   if (mode !== 'title' && !sleeping) clock.step(dt);
   // Tariel
-  if (mode === 'free' && !paused && !sleeping && $('map').classList.contains('gone')) {
+  if (mode === 'free' && !paused && !sleeping && !convo && $('map').classList.contains('gone')) {
     walker.step(dt, readInput(), cam.yaw);
     walker.events.length = 0;
   }
@@ -474,7 +526,7 @@ app.on('update', (dt) => {
   if (horse && horse.visible) horse.update(dt);
   for (const k in cast) if (cast[k].visible) cast[k].update(dt);
   if (town) { if (clock.scale > 1) town.snap(clock.hour); else town.update(dt, clock.hour); }   // hurried time: they keep up by jumping
-  if (mode === 'free') nearby();
+  if (mode === 'free' && !convo) { nearby(); elarNoticesHer(); }
   updateDoors(dt);
   debugLine(dt);
   // the camera, behind and above her; never under the ground
@@ -557,4 +609,4 @@ pauseWiring(); applySettings();
 })();
 
 // for testing, and for curiosity
-window.TARIEL = { get horse() { return horse; }, get paused() { return paused; }, selves, camera, opening, skip: () => { startOpening(); step = SCRIPT.length - 2; waiting = false; next(); }, app, pc, W, get walker() { return walker; }, clock, map, cam, cast, get tariel() { return tariel; }, get mode() { return mode; }, get town() { return town; }, Figure, THIAH, TARIEL, next, VERSION };
+window.TARIEL = { get horse() { return horse; }, get paused() { return paused; }, selves, camera, opening, skip: () => { startOpening(); step = SCRIPT.length - 2; waiting = false; next(); }, app, pc, W, get walker() { return walker; }, clock, map, cam, cast, get tariel() { return tariel; }, get mode() { return mode; }, get town() { return town; }, get convo() { return convo; }, get STORY() { return STORY; }, Figure, THIAH, TARIEL, next, VERSION };

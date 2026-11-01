@@ -140,7 +140,7 @@ ok(!tooDeep(mid[0], mid[1]), 'the bridge can be walked');
 
 // the people of Stanlech
 const folk = makeFolk();
-ok(folk.length === ROLES.length && folk.every((p, i) => p.id === i), 'ten people, in order');
+ok(folk.length === ROLES.length && folk.every((p, i) => p.id === i), 'everyone in order');
 ok(JSON.stringify(makeFolk()) === JSON.stringify(folk), 'the same people every time');
 ok(folk.every((p) => walkable(p.mouth[0], p.mouth[1], 0.3) && walkable(p.tavernSpot[0], p.tavernSpot[1], 0.3) && p.work.length > 0 && p.work.every((w) => walkable(w.spot[0], w.spot[1], 0.3))), 'everyone\'s door, tavern seat and workplaces are standable');
 ok(folk.every((p) => inTavern(p.tavernSpot[0], p.tavernSpot[1])) && !inTavern(...folk[0].mouth), 'tavern seats are inside, doors outside');
@@ -181,6 +181,34 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
 { const folk = makeFolk(), names = new Set(folk.map((p) => p.who));
   ok(names.size === folk.length && folk.every((p) => typeof p.who === 'string' && p.who.length > 2), 'everyone has a name of their own');
   ok(folk.every((p) => [0, 1, 2, 3].every((n) => typeof greeting(p, 12, n) === 'string' && greeting(p, 12, n).length > 5)), 'everyone has something to say'); }
+// conversation: every script is whole, and a talk runs from start to end
+{
+  const { newStory, Convo, check } = await import('../src/sim/dialogue.js');
+  const { scriptFor } = await import('../src/sim/story.js');
+  let scripts = 0, broken = [];
+  for (const p of makeFolk()) for (const face of ['thiah', 'tariel']) for (let nights = 0; nights <= 3; nights++) {
+    const st = newStory(), sc = scriptFor(p, { face, nights, day: nights + 1, hour: 12 }, st), r = check(sc, 'start'); scripts++;
+    if (r.bad.length) broken.push(p.role + '/' + face + '/' + nights + ': ' + r.bad.join(', '));
+    // walk the whole talk, always taking the first choice, then the last, and make sure it ends
+    for (const pickLast of [false, true]) {
+      const c = new Convo(sc, { face, nights, day: nights + 1, hour: 12 }, st, 'start'); let guard = 0;
+      while (!c.done && guard++ < 60) { const n = c.choices().length; if (n) c.pick(pickLast || guard > 6 ? n - 1 : 0); else c.next(); }
+      if (!c.done) broken.push(p.role + ' talk never ends');
+    }
+  }
+  ok(broken.length === 0, 'all ' + scripts + ' conversation scripts are whole' + (broken.length ? ': ' + broken.slice(0, 3).join('; ') : ''));
+  // Elar speaks first to Thiah, as Rhys's notes have it, and only once
+  const elar = makeFolk().find((p) => p.role === 'elar'), st2 = newStory();
+  const first = new Convo(scriptFor(elar, { face: 'thiah', nights: 0, day: 1, hour: 12 }, st2), { face: 'thiah', nights: 0, day: 1, hour: 12 }, st2, 'start');
+  ok(/remind me of someone/.test(first.view().line) && st2.flags.elar_thiah, 'Elar: "you remind me of someone"');
+  first.pick(0); ok(/place who/.test(first.view().line), 'Elar: "I cannot quite place who"');
+  const again = scriptFor(elar, { face: 'thiah', nights: 0, day: 1, hour: 12 }, st2);
+  ok(!/remind me of someone/.test(again.start.line), 'Elar does not say it twice');
+  // what she learns goes in the journal, once
+  const keeper = makeFolk()[0], st3 = newStory(), c3 = new Convo(scriptFor(keeper, { face: 'thiah', nights: 2, day: 3, hour: 12 }, st3), { face: 'thiah', nights: 2, day: 3, hour: 12 }, st3, 'start');
+  const idx = c3.view().choices.indexOf('Anything strange happening?'); c3.pick(idx); c3.pick(c3.choices().findIndex((c) => c.go === 't_strange'));
+  ok(st3.notes.some((n) => n.id === 'edda') && st3.notes.filter((n) => n.id === 'edda').length === 1, 'the news from Shappel goes in her journal, once');
+}
 // how a drawn person moves
 for (const pose of POSES) {
   let widest = 0;

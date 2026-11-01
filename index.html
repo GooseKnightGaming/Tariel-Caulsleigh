@@ -39,6 +39,9 @@
   #talkname { font-weight: 700; color: #f7dca0; font-size: 19px; }
   #talklang { font-style: italic; color: var(--dim); font-size: 16px; margin-left: 6px; }
   #talkline { font-size: 22px; line-height: 1.3; margin-top: 3px; }
+  #talkchoices { margin-top: 8px; }
+  #talkchoices div { font-size: 19px; padding: 3px 0; color: #e8d8b0; cursor: pointer; }
+  #talkchoices div b { color: #f7dca0; margin-right: 8px; }
   #talkmore { font-size: 14px; color: var(--dim); text-align: right; margin-top: 4px; }
   #banner { position: absolute; left: 0; right: 0; top: 22%; text-align: center; opacity: 0; text-shadow: 0 2px 12px #000; }
   #banner.show { animation: banner 4.2s ease forwards; }
@@ -100,7 +103,7 @@
   <div id="staminabox" class="gone"><div id="stamina"></div></div>
   <div id="hint" class="gone"></div>
   <div id="prompt" class="gone"></div>
-  <div id="talk" class="gone"><div><span id="talkname"></span> <span id="talklang"></span></div><div id="talkline"></div><div id="talkmore">click or Enter ▸</div></div>
+  <div id="talk" class="gone"><div><span id="talkname"></span> <span id="talklang"></span></div><div id="talkline"></div><div id="talkchoices"></div><div id="talkmore">click or Enter ▸</div></div>
   <div id="banner"><div id="bannerbig"></div><div id="bannersmall"></div></div>
 </div>
 
@@ -113,9 +116,15 @@
     <button id="p-resume">Resume</button>
     <button id="p-gear">Gear &amp; bag <small>(I)</small></button>
     <button id="p-character">Character <small>(K)</small></button>
+    <button id="p-journal">Journal <small>(J)</small></button>
     <button id="p-controls">Controls</button>
     <button id="p-settings">Settings</button>
     <button id="p-restart">Start again from the hill</button>
+  </div>
+  <div class="pg pg-journal">
+    <h3>Journal</h3>
+    <div id="journal"></div>
+    <button class="p-back">Back</button>
   </div>
   <div class="pg pg-controls">
     <h3>Controls</h3>
@@ -126,7 +135,9 @@
       <tr><td><kbd>C</kbd> · <kbd>Ctrl</kbd></td><td>walk / jog · walk while held</td></tr>
       <tr><td><kbd>Space</kbd></td><td>jump</td></tr>
       <tr><td><kbd>Q</kbd></td><td>Tariel ⇄ Thiah Kirðotr</td></tr>
-      <tr><td><kbd>E</kbd></td><td>use: doors, the tavern's bed</td></tr>
+      <tr><td><kbd>E</kbd></td><td>use: doors, the tavern's bed, talk to people</td></tr>
+      <tr><td><kbd>1</kbd>-<kbd>4</kbd></td><td>answer in a conversation · <kbd>E</kbd> goes on</td></tr>
+      <tr><td><kbd>J</kbd></td><td>journal</td></tr>
       <tr><td><kbd>I</kbd> · <kbd>Tab</kbd></td><td>gear &amp; bag</td></tr>
       <tr><td><kbd>K</kbd></td><td>character (traits)</td></tr>
       <tr><td><kbd>F3</kbd> · <kbd>`</kbd></td><td>debug line</td></tr>
@@ -172,6 +183,6 @@
   <kbd>Q</kbd> Tariel ⇄ Thiah · <kbd>E</kbd> use · <kbd>M</kbd> map<br><kbd>I</kbd> gear · <kbd>K</kbd> character · <kbd>T</kbd> (hold) hurry time<br><kbd>Esc</kbd> pause · <kbd>F3</kbd> debug line · <kbd>H</kbd> hide this
 </div>
 
-<script src="game.js?v=T0.2.mvxgpeid"></script>
+<script src="game.js?v=T0.2.mvxojybn"></script>
 </body>
 </html>
