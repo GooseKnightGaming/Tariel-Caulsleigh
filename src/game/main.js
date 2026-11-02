@@ -20,6 +20,7 @@ import { buy as buyGoodRaw } from '../sim/trade.js';
 import { breakUp } from '../sim/combat.js';
 import { makeAudio } from './audio.js';
 import { initTouch } from './touch.js';
+import { Round, prize, FEE as ARCH_FEE } from '../sim/archery.js';
 import { Table, RUNES, RUNE_NAMES, rank } from '../sim/threot.js';
 import { Figure, THIAH, TARIEL } from './figure.js';
 
@@ -235,8 +236,9 @@ window.addEventListener('mousemove', (e) => {
   cam.yaw -= e.movementX * 0.0032 * SETTINGS.sens;
   cam.pitch = Math.max(-0.5, Math.min(1.25, cam.pitch + e.movementY * 0.0028 * SETTINGS.sens * (SETTINGS.invert ? -1 : 1)));
 });
+$('range').addEventListener('click', () => rangeLoose());
 const TOUCH = initTouch((dx, dy) => {
-  if (paused || convo || gameTable) return;
+  if (paused || convo || inGame()) return;
   cam.yaw -= dx * 0.006 * SETTINGS.sens;
   cam.pitch = Math.max(-0.5, Math.min(1.25, cam.pitch + dy * 0.005 * SETTINGS.sens * (SETTINGS.invert ? -1 : 1)));
 }, () => { if (mode === 'opening' && !waiting) next(); });
@@ -245,6 +247,11 @@ $('talk').addEventListener('click', () => { if (convo && !convo.choices().length
 window.addEventListener('wheel', (e) => { cam.want = Math.max(2.2, Math.min(14, cam.want * (e.deltaY > 0 ? 1.12 : 0.9))); }, { passive: true });
 window.addEventListener('keydown', (e) => {
   keys.add(e.code);
+  if (range) {
+    if (e.code === 'Escape' || e.code === 'KeyQ') { e.preventDefault(); closeRange(); return; }
+    if (e.code === 'Space' || e.code === 'Enter' || e.code === 'KeyE') { e.preventDefault(); rangeLoose(); }
+    return;
+  }
   if (gameTable) {
     if (e.code === 'Escape' || e.code === 'KeyQ') { e.preventDefault(); closeGame(); return; }
     if (/^(Digit|Numpad)[1-3]$/.test(e.code)) gameKey('hold', Number(e.code.slice(-1)) - 1);
@@ -350,17 +357,20 @@ function nearby() {
     if (offerDoor) offer = 'door';
   }
   if (!offer && nearGame()) offer = 'play';
+  if (!offer && nearButts()) offer = 'shoot';
   offerPerson = null;
   if (!offer && town) { offerPerson = town.nearest(walker.pos[0], walker.pos[2], 2.3); if (offerPerson) offer = 'talk'; }
   if (chat && (!chat.s.fig.visible || Math.hypot(chat.s.fig.pos[0] - walker.pos[0], chat.s.fig.pos[2] - walker.pos[2]) > 4)) endChat();
   $('prompt').classList.toggle('gone', !offer || paused);
   if (offer === 'sleep') $('prompt').innerHTML = '<kbd>E</kbd> Sleep until morning';
   else if (offer === 'talk') $('prompt').innerHTML = '<kbd>E</kbd> Talk to ' + offerPerson.p.who + ' (' + roleLabel(offerPerson.p) + ')';
+  else if (offer === 'shoot') $('prompt').innerHTML = '<kbd>E</kbd> Shoot at the butts (' + FEE + ' dinar for three arrows)';
   else if (offer === 'play') $('prompt').innerHTML = '<kbd>E</kbd> Play Threot at the table (' + STAKE + ' dinar a hand)';
   else if (offer === 'door') $('prompt').innerHTML = '<kbd>E</kbd> ' + (OPEN.has(offerDoor.id) ? 'Close' : 'Open') + ' the door' + (offerDoor.b.kind === 'tavern' ? ' (the tavern)' : '');
 }
 // ── Threot at the tavern's table ─────────────────────────────────────────────────────────────────────────────
 const STAKE = 2;
+const FEE = ARCH_FEE;
 let gameTable = null, tableSpot = null;
 const purse = () => (typeof STORY.purse === 'number' ? STORY.purse : 24);
 function nearGame() {
@@ -392,6 +402,35 @@ function gameKey(act, i) {
   drawGame();
 }
 function buyGood(bag, id) { const r = buyGoodRaw(purse(), bag, id); if (r.ok) { STORY.purse = r.purse; saveStory(); applyTraits(); } return r; }
+// ── the archery butts ─────────────────────────────────────────────────────────────────────────────────────────
+let range = null;
+const inGame = () => !!(gameTable || range);
+function nearButts() { const b = W.butts(); return Math.hypot(walker.pos[0] - b.mx, walker.pos[2] - b.mz) < 2.2 && Math.abs(walker.pos[1] - b.my) < 1.5; }
+function startRange() {
+  if (purse() < FEE) { hint('The bowman wants ' + FEE + ' dinar for three arrows.', 3000); return; }
+  STORY.purse = purse() - FEE; saveStory(); keys.clear();
+  range = new Round(character.traits); range.msg = 'Watch the crosshair. Space, click or tap looses an arrow.'; $('range').classList.remove('gone'); drawRange(0);
+}
+function tiredness() { return 1 - walker.stamina / walker.staminaMax; }
+function rangeFrame(dt) { if (range && !range.done) { const p = range.step(dt, tiredness()); drawRange(p); } }
+function drawRange(p) {
+  const r = range; if (!r) return;
+  const px = (v) => 50 + 50 * Math.max(-1.4, Math.min(1.4, v));
+  if (!r.done && p) { $('rcross').style.left = px(p.x) + '%'; $('rcross').style.top = px(p.y) + '%'; }
+  $('rcross').style.display = r.done ? 'none' : 'block';
+  $('rarrows').innerHTML = r.arrows.map((a) => '<i class="rhit" style="left:' + px(a.x) + '%;top:' + px(a.y) + '%"></i>').join('');
+  $('rmsg').textContent = r.done ? 'Total ' + r.total + (prize(r.total) ? ' - the bowman pays you ' + prize(r.total) + ' dinar.' : ' - nothing this time.') : r.msg + ' (' + r.left + ' arrow' + (r.left > 1 ? 's' : '') + ' left)';
+  $('rhelp').textContent = r.done ? 'Enter: leave' : 'Space: loose - Esc: leave';
+}
+function rangeLoose() {
+  const r = range; if (!r) return;
+  if (r.done) return closeRange();
+  const a = r.loose(tiredness()); walker.stamina = Math.max(0, walker.stamina - 6);
+  r.msg = a.pts ? a.name[0].toUpperCase() + a.name.slice(1) + ' - ' + a.pts + '.' : 'Wide. Nothing.';
+  if (r.done) { const pr = prize(r.total); if (pr) { STORY.purse = purse() + pr; saveStory(); } }
+  drawRange({ x: a.x, y: a.y });
+}
+function closeRange() { range = null; $('range').classList.add('gone'); }
 function closeGame() { gameTable = null; $('game').classList.add('gone'); saveStory(); }
 // ── events: things that happen on their own, whether or not she is there ───────────────────────────────────────
 const audio = makeAudio();
@@ -436,7 +475,7 @@ function events(dt) {
 }
 // F: step between the two men. Strength and presence decide it; a failure costs her wind.
 function tryBreakUp() {
-  if (!brawl || convo || gameTable || sleeping) return;
+  if (!brawl || convo || inGame() || sleeping) return;
   const near = [brawl.a, brawl.b].some((q) => Math.hypot(q.fig.pos[0] - walker.pos[0], q.fig.pos[2] - walker.pos[2]) < 2.4);
   if (!near) { hint('Too far to step between them.', 2500); return; }
   const r = breakUp(character.traits, Math.random);
@@ -515,7 +554,8 @@ function endTalk() {
 function endChat() { endTalk(); }
 function act() {
   if (convo) return;
-  if (gameTable) return;
+  if (inGame()) return;
+  if (offer === 'shoot') { startRange(); return; }
   if (offer === 'play') { startGame(); return; }
   if (offer === 'talk' && offerPerson) { startTalk(offerPerson); return; }
   if (offer === 'door' && offerDoor) { useDoor(offerDoor); return; }
@@ -634,7 +674,7 @@ app.on('update', (dt) => {
   clock.scale = keys.has('KeyT') ? 60 : 1;
   if (mode !== 'title' && !sleeping) clock.step(dt);
   // Tariel
-  if (mode === 'free' && !paused && !sleeping && !convo && !gameTable && $('map').classList.contains('gone')) {
+  if (mode === 'free' && !paused && !sleeping && !convo && !inGame() && $('map').classList.contains('gone')) {
     walker.step(dt, readInput(), cam.yaw);
     walker.events.length = 0;
   }
@@ -654,9 +694,10 @@ app.on('update', (dt) => {
   for (const k in cast) if (cast[k].visible) cast[k].update(dt);
   if (town) { if (clock.scale > 1) town.snap(clock.hour, Math.min(2, nights)); else town.update(dt, clock.hour, Math.min(2, nights)); }   // hurried time: they keep up by jumping
   events(dt);
-  document.body.classList.toggle('busy', !!(convo || gameTable));
+  document.body.classList.toggle('busy', !!(convo || inGame()));
+  rangeFrame(dt);
   { const inside = inTavern(walker.pos[0], walker.pos[2]); const hr = clock.hour; audio.update(dt, { inside, night: Math.min(1, Math.max(0, 1 - s0daylight())), harper: hr >= 17.5 && hr < 22.5 && !(brawl), hush: !!shadow || !!brawl }); }
-  if (mode === 'free' && !convo && !gameTable) { nearby(); elarNoticesHer(); }
+  if (mode === 'free' && !convo && !inGame()) { nearby(); elarNoticesHer(); }
   updateDoors(dt);
   debugLine(dt);
   // the camera, behind and above her; never under the ground

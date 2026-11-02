@@ -179,6 +179,18 @@ function stallInto(g, st) {
   g.ellipsoid(-1.05, 0.28, -1.05, 0.28, 0.28, 0.26, [0.66, 0.56, 0.38], { lat: 4, lon: 8 });
   g.box(-0.3, 0, -1.2, 0.35, 0.55, -0.75, woodd);
 }
+// the archery butts: a square straw target with painted rings, on a wooden stand, and a mark on the ground to shoot from
+function buttsInto(g) {
+  const b = W.butts(), wood = [0.34, 0.25, 0.16];
+  g.at(b.x, b.y - 0.05, b.z, b.yaw);
+  for (const px of [-0.7, 0.7]) g.box(px - 0.05, 0, -0.35, px + 0.05, 1.5, -0.25, wood);
+  g.box(-0.8, 0.0, -0.12, 0.8, 0.12, -0.02, wood);
+  g.box(-0.62, 0.45, -0.2, 0.62, 1.7, -0.02, [0.78, 0.66, 0.34]);                       // the straw boss
+  const cols = [[0.93, 0.92, 0.86], [0.12, 0.12, 0.14], [0.2, 0.34, 0.6], [0.7, 0.16, 0.14], [0.92, 0.76, 0.2]];
+  for (let k = 0; k < 5; k++) { const r = 0.5 - k * 0.1; g.box(-r, 1.075 - r, -0.02, r, 1.075 + r, 0.005 + k * 0.004, cols[k]); }
+  g.at(b.mx, b.my - 0.02, b.mz, b.yaw);
+  g.box(-0.5, 0, -0.04, 0.5, 0.05, 0.04, [0.9, 0.85, 0.7]);                              // the mark
+}
 function bridgeInto(g) {
   const a = W.BRIDGE.from, b = W.BRIDGE.to, steps = 14, half = W.BRIDGE.w / 2;
   const yaw = Math.atan2(b[0] - a[0], b[1] - a[1]);
@@ -232,6 +244,7 @@ export function buildTowns(pc, app, list) {
     if (b.kind === 'well') wellInto(g, b);
   }
   for (const st of W.stalls()) stallInto(g, st);
+  buttsInto(g);
   bridgeInto(g);
   const e = new pc.Entity('towns');
   e.addComponent('render', { meshInstances: [new pc.MeshInstance(g.mesh(pc, app.graphicsDevice), vcMaterial(pc, { cull: false }))], castShadows: true, receiveShadows: true });

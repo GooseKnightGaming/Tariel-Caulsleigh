@@ -216,6 +216,16 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
   ok(hi > lo && lo >= 0.25 && hi <= 0.9, 'strength and presence help stepping in');
   ok(breakUp({}, () => 0).ok && !breakUp({}, () => 0.99).ok && breakUp({}, () => 0.99).cost > breakUp({}, () => 0).cost, 'failing costs more wind');
 }
+// archery
+{
+  const A = await import('../src/sim/archery.js');
+  ok(A.score(0, 0).pts === 10 && A.score(0.2, 0).pts === 8 && A.score(0.4, 0.4).pts === 4 && A.score(1.2, 0).pts === 0, 'rings score by distance');
+  const steady = A.aim(1, { endurance: 5, wits: 5 }), shaky = A.aim(1, {}), n = (p) => Math.hypot(p.x, p.y);
+  let hi = 0, lo = 0; for (let t = 0; t < 30; t += 0.1) { hi = Math.max(hi, n(A.aim(t, { endurance: 5 }))); lo = Math.max(lo, n(A.aim(t, {}))); }
+  ok(hi < lo, 'endurance steadies the hold'); ok(steady && shaky, 'aim gives a point');
+  const r = new A.Round({}); r.step(0.5); r.loose(); r.loose(); ok(!r.done); r.loose(); ok(r.done && r.loose() === null, 'three arrows, then done');
+  ok(A.prize(30) > A.prize(20) && A.prize(20) > A.prize(14) && A.prize(5) === 0, 'prizes grow with the score');
+}
 // eating
 {
   const CH = await import('../src/sim/character.js');

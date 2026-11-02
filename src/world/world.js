@@ -227,6 +227,13 @@ export function stalls() {
   });
   return stalls.cache;
 }
+// the archery butts: a straw target on a stand at the edge of the market, and the mark to shoot from, 9 m away
+export function butts() {
+  if (butts.cache) return butts.cache;
+  const [tx, tz] = fromRiver(-19, -112), [mx, mz] = fromRiver(-10, -112);
+  butts.cache = { x: tx, z: tz, y: heightAt(tx, tz), mx, mz, my: heightAt(mx, mz), yaw: Math.atan2(mx - tx, mz - tz) };
+  return butts.cache;
+}
 // where a stallholder stands (behind the counter), and what is out in front of it
 export function stallSpot(st) { const c = Math.cos(st.yaw), s = Math.sin(st.yaw); return [st.x - 0.95 * s, st.z - 0.95 * c]; }
 // a house's walls, cell by cell: [{ side: 'front'|'back'|'left'|'right', i, lx, lz, rot, door }]
