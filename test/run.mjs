@@ -216,6 +216,14 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
   ok(hi > lo && lo >= 0.25 && hi <= 0.9, 'strength and presence help stepping in');
   ok(breakUp({}, () => 0).ok && !breakUp({}, () => 0.99).ok && breakUp({}, () => 0.99).cost > breakUp({}, () => 0).cost, 'failing costs more wind');
 }
+// eating
+{
+  const CH = await import('../src/sim/character.js');
+  const c = CH.newCharacter(), n0 = c.bag.find((b) => b.id === 'bread').qty;
+  const r = CH.eat(c, 'bread'); ok(r.ok && r.gain === 25 && c.bag.find((b) => b.id === 'bread').qty === n0 - 1, 'bread is eaten');
+  CH.eat(c, 'bread'); ok(!c.bag.some((b) => b.id === 'bread'), 'an empty stack leaves the bag');
+  ok(!CH.eat(c, 'knife').ok, 'a knife is not food');
+}
 // trade: stalls and the keeper sell, purses empty, bags fill
 {
   const { GOODS, waresFor, buy } = await import('../src/sim/trade.js');

@@ -562,7 +562,11 @@ function drawGear() {
   const worn = character.worn[who];
   $('gearwho').textContent = who === 'thiah' ? 'Thiah Kirðotr wears' : 'Tariel Caulsleigh wears';
   $('slots').innerHTML = Object.entries(worn).map(([slot, item]) => `<tr><td>${slot}</td><td>${item || '<span class="empty">-</span>'}</td></tr>`).join('');
-  $('bag').innerHTML = character.bag.map((it) => `<tr><td>${it.name}${it.qty > 1 ? ' × ' + it.qty : ''}</td><td class="about">${it.about}</td></tr>`).join('');
+  $('bag').innerHTML = character.bag.map((it) => `<tr><td>${it.name}${it.qty > 1 ? ' × ' + it.qty : ''}</td><td class="about">${it.about}${CH.FOOD[it.id] ? ' <button class="eat" data-id="' + it.id + '">Use</button>' : ''}</td></tr>`).join('');
+  for (const b of document.querySelectorAll('#bag .eat')) b.onclick = () => {
+    const r = CH.eat(character, b.dataset.id); if (!r.ok) return;
+    walker.stamina = Math.min(walker.staminaMax, walker.stamina + walker.staminaMax * r.gain / 100); applyTraits(); drawGear(); hint(r.msg, 2500);
+  };
 }
 
 // ── the pause menu (Esc) ──────────────────────────────────────────────────

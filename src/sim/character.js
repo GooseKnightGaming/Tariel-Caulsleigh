@@ -51,3 +51,13 @@ export function load(json) {
   return ch;
 }
 export const save = (ch) => JSON.stringify({ traits: ch.traits, points: ch.points, bag: ch.bag });
+
+// eating: how much wind a food gives back (percent of her stamina), and the bag change. Returns { ok, gain, msg }
+export const FOOD = { bread: 25, apple: 12, cheese: 30, fish: 35, stew: 60, ale: 8, water: 15 };
+export function eat(ch, id) {
+  const it = ch.bag.find((b) => b.id === id && b.qty > 0), gain = FOOD[id];
+  if (!it || !gain) return { ok: false, gain: 0, msg: 'Nothing to eat there.' };
+  it.qty--; if (it.qty <= 0 && id !== 'water') ch.bag.splice(ch.bag.indexOf(it), 1);
+  else if (id === 'water' && it.qty <= 0) it.qty = 0;
+  return { ok: true, gain, msg: 'You eat the ' + it.name.toLowerCase() + '.' };
+}
