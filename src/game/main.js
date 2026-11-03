@@ -16,7 +16,7 @@ import { Town } from './townsfolk.js';
 import { roleLabel, inTavern, walkable } from '../sim/townsfolk.js';
 import { Convo, newStory, addNote } from '../sim/dialogue.js';
 import { scriptFor, morning } from '../sim/story.js';
-import { buy as buyGoodRaw } from '../sim/trade.js';
+import { buy as buyGoodRaw, change as changeMoney, purseText } from '../sim/trade.js';
 import { breakUp } from '../sim/combat.js';
 import { makeAudio } from './audio.js';
 import { initTouch } from './touch.js';
@@ -373,6 +373,7 @@ const STAKE = 2;
 const FEE = ARCH_FEE;
 let gameTable = null, tableSpot = null;
 const purse = () => (typeof STORY.purse === 'number' ? STORY.purse : 24);
+const librar = () => (typeof STORY.librar === 'number' ? STORY.librar : 1);
 function nearGame() {
   if (!tableSpot) { const [x, z] = W.toWorld(W.tavern(), 1.9, 1.8); tableSpot = { x, z, y: W.tavern().y }; }
   return Math.hypot(walker.pos[0] - tableSpot.x, walker.pos[2] - tableSpot.z) < 2.4 && Math.abs(walker.pos[1] - tableSpot.y) < 1.2;
@@ -538,9 +539,9 @@ function talkKey(i) {
     if (purse() >= n) { STORY.purse = purse() - n; saveStory(); } else convo.go('nopay');
   }
   if (convo.act && convo.act[0] === 'change') {
-    convo.act = null; const coin = character.bag.find((b) => b.id === 'coin' && b.qty > 0);
-    if (!coin) convo.go('nochange');
-    else { coin.qty--; if (!coin.qty) character.bag.splice(character.bag.indexOf(coin), 1); STORY.purse = purse() + 20; STORY.shopmsg = 'One librar becomes twenty dinar. Your purse: ' + STORY.purse + '.'; saveStory(); applyTraits(); }
+    const m = { dinar: purse(), librar: librar() }, r = changeMoney(m, convo.act[1]); convo.act = null;
+    if (r.ok) { STORY.purse = m.dinar; STORY.librar = m.librar; saveStory(); }
+    STORY.shopmsg = r.msg + ' Your purse: ' + purseText({ dinar: purse(), librar: librar() }) + '.';
   }
   if (convo.act && convo.act[0] === 'buy') {
     const r = buyGood(character.bag, convo.act[1]); STORY.shopmsg = (r.ok ? 'Taken: ' : 'No: ') + r.msg; convo.act = null;
@@ -584,7 +585,7 @@ function act() {
 let character = CH.newCharacter();
 try { character = CH.load(localStorage.getItem('tariel.character')); } catch (e) { /* a fresh one */ }
 function drawJournal() {
-  const j = $('journal'); j.innerHTML = '<div class="note"><b>Purse:</b> ' + purse() + ' dinar</div>';
+  const j = $('journal'); j.innerHTML = '<div class="note"><b>Purse:</b> ' + purseText({ dinar: purse(), librar: librar() }) + '</div>';
   if (!STORY.notes.length) { j.innerHTML += '<div class="note">Nothing yet. Talk to people; what matters is written here.</div>'; return; }
   for (const n of STORY.notes) { const d = document.createElement('div'); d.className = 'note'; d.textContent = 'Day ' + n.day + ' - ' + n.text; j.append(d); }
 }
@@ -602,7 +603,7 @@ function drawGear() {
   const worn = character.worn[who];
   $('gearwho').textContent = who === 'thiah' ? 'Thiah Kirðotr wears' : 'Tariel Caulsleigh wears';
   $('slots').innerHTML = Object.entries(worn).map(([slot, item]) => `<tr><td>${slot}</td><td>${item || '<span class="empty">-</span>'}</td></tr>`).join('');
-  $('bag').innerHTML = character.bag.map((it) => `<tr><td>${it.name}${it.qty > 1 ? ' × ' + it.qty : ''}</td><td class="about">${it.about}${CH.FOOD[it.id] ? ' <button class="eat" data-id="' + it.id + '">Use</button>' : ''}</td></tr>`).join('');
+  $('bag').innerHTML = '<tr><td>Purse</td><td class="about">' + purseText({ dinar: purse(), librar: librar() }) + '</td></tr>' + character.bag.map((it) => `<tr><td>${it.name}${it.qty > 1 ? ' × ' + it.qty : ''}</td><td class="about">${it.about}${CH.FOOD[it.id] ? ' <button class="eat" data-id="' + it.id + '">Use</button>' : ''}</td></tr>`).join('');
   for (const b of document.querySelectorAll('#bag .eat')) b.onclick = () => {
     const r = CH.eat(character, b.dataset.id); if (!r.ok) return;
     walker.stamina = Math.min(walker.staminaMax, walker.stamina + walker.staminaMax * r.gain / 100); applyTraits(); drawGear(); hint(r.msg, 2500);

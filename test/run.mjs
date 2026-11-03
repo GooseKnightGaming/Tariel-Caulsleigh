@@ -216,6 +216,15 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
   ok(hi > lo && lo >= 0.25 && hi <= 0.9, 'strength and presence help stepping in');
   ok(breakUp({}, () => 0).ok && !breakUp({}, () => 0.99).ok && breakUp({}, () => 0.99).cost > breakUp({}, () => 0).cost, 'failing costs more wind');
 }
+// the money-changer
+{
+  const { change, purseText } = await import('../src/sim/trade.js');
+  const m = { dinar: 25, librar: 0 };
+  ok(change(m, 'up').ok && m.dinar === 5 && m.librar === 1, '20 dinar make a librar');
+  ok(!change(m, 'up').ok && m.dinar === 5, 'not enough dinar to change up');
+  ok(change(m, 'down').ok && m.dinar === 25 && m.librar === 0 && !change(m, 'down').ok, 'a librar becomes 20 dinar, once');
+  ok(purseText({ dinar: 4, librar: 2 }) === '2 librar, 4 dinar', 'the purse reads plainly');
+}
 // archery
 {
   const A = await import('../src/sim/archery.js');

@@ -170,9 +170,8 @@ function traderScript(p, ctx) {
 }
 function changerScript(p, ctx) {
   const who = p.who, S = {}, menu = [
-    { text: 'What do you change?', go: 'what' }, { text: 'How do the coins stand?', go: 'rate' }, { text: 'Change a librar for 20 dinar.', go: 'changed', act: ['change'] }, { text: 'Goodbye.' }];
+    { text: 'What do you change?', go: 'what' }, { text: 'How do the coins stand?', go: 'rate' }, { text: 'Change a librar for 20 dinar.', go: 'changed', act: ['change', 'down'] }, { text: 'Change 20 dinar for a librar.', go: 'changed', act: ['change', 'up'] }, { text: 'Goodbye.' }];
   S.changed = { who, line: (c, state) => state.shopmsg || 'Done.', choices: menu };
-  S.nochange = { who, line: 'You have no librar in your bag to change, friend.', choices: menu };
   S.start = { who, line: ctx.face === 'tariel' ? 'Unterofficer. Saes librar, I presume. A fair cut for a fair bridge.' : 'Coin? I change any honest coin, barefoot or booted.', choices: menu };
   S.what = { who, line: 'Saes and Gwalas librar, Kern kregyn, Mittland avér, Janhar mark, Lunesir skast. I weigh them all.', choices: menu };
   S.rate = { who, line: 'A librar is worth twenty dinar, and a dinar twelve assar. Everything else, I\'ll tell you the day you want it.', choices: menu };

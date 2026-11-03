@@ -17,7 +17,6 @@ export function newCharacter() {
     traits, points: START_POINTS, level: 1,
     // the bag: shared by both of her selves (placeholders until Rhys sets out what she carries)
     bag: [
-      { id: 'coin', name: 'Librar', qty: 25, kind: 'coin', about: 'Saes coin, in a plain purse. (The amount is a placeholder.)' },
       { id: 'bread', name: 'Bread', qty: 2, kind: 'food', about: 'A heel of bread and a hard crust.' },
       { id: 'water', name: 'Waterskin', qty: 1, kind: 'gear', about: 'Full, for now.' },
       { id: 'knife', name: 'Small knife', qty: 1, kind: 'tool', about: 'For bread, rope and letters.' },
@@ -47,7 +46,7 @@ export function effects(ch) {
 }
 export function load(json) {
   const ch = newCharacter();
-  try { const o = JSON.parse(json); if (o && o.traits) { Object.assign(ch.traits, o.traits); ch.points = o.points; if (Array.isArray(o.bag)) ch.bag = o.bag; } } catch (e) { /* a fresh one */ }
+  try { const o = JSON.parse(json); if (o && o.traits) { Object.assign(ch.traits, o.traits); ch.points = o.points; if (Array.isArray(o.bag)) ch.bag = o.bag.filter((b) => b.id !== 'coin'); } } catch (e) { /* a fresh one */ }
   return ch;
 }
 export const save = (ch) => JSON.stringify({ traits: ch.traits, points: ch.points, bag: ch.bag });

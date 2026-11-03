@@ -27,3 +27,15 @@ export function buy(purse, bag, id) {
   if (have) have.qty++; else bag.push({ id, name: g.name, qty: 1, kind: g.kind, about: g.about });
   return { ok: true, msg: g.name + ' for ' + g.price + ' dinar.', purse: purse - g.price };
 }
+
+// the money-changer: 1 librar = 20 dinar. money is { dinar, librar }; returns { ok, msg } and changes it in place
+export const LIBRAR = 20;
+export function change(money, dir) {
+  if (dir === 'down') {
+    if (money.librar < 1) return { ok: false, msg: 'You have no librar to change.' };
+    money.librar--; money.dinar += LIBRAR; return { ok: true, msg: 'One librar becomes ' + LIBRAR + ' dinar.' };
+  }
+  if (money.dinar < LIBRAR) return { ok: false, msg: 'You need ' + LIBRAR + ' dinar to make a librar.' };
+  money.dinar -= LIBRAR; money.librar++; return { ok: true, msg: LIBRAR + ' dinar become one librar.' };
+}
+export const purseText = (m) => (m.librar ? m.librar + ' librar, ' : '') + m.dinar + ' dinar';
