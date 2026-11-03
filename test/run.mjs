@@ -216,6 +216,18 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
   ok(hi > lo && lo >= 0.25 && hi <= 0.9, 'strength and presence help stepping in');
   ok(breakUp({}, () => 0).ok && !breakUp({}, () => 0.99).ok && breakUp({}, () => 0.99).cost > breakUp({}, () => 0).cost, 'failing costs more wind');
 }
+// a fistfight in rounds
+{
+  const { fighter, round, aiMove, MOVES } = await import('../src/sim/combat.js');
+  let seed = 11; const rng = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const A = fighter('a', { strength: 3, agility: 3 }), B = fighter('b');
+  ok(MOVES.length === 3 && MOVES.includes(aiMove(rng)), 'three moves');
+  let hitsB = 0; for (let i = 0; i < 60; i++) hitsB += round(A, B, 'strike', 'feint', rng).b; let hitsA = 0; for (let i = 0; i < 60; i++) hitsA += round(A, B, 'feint', 'strike', rng).a;
+  ok(hitsB > 20 && hitsA > 10, 'the winning move lands (strike over feint ' + hitsB + ', strike over feint for him ' + hitsA + ')');
+  ok(round(A, B, 'guard', 'guard', rng).a === 0 && round(A, B, 'feint', 'feint', rng).b === 0, 'a stand-off hurts nobody');
+  let n = 0, wins = 0; for (let g = 0; g < 100; g++) { const x = fighter('x', { strength: 3, agility: 3, endurance: 2 }), y = fighter('y'); while (x.hp > 0 && y.hp > 0 && n++ < 99999) { const r = round(x, y, aiMove(rng), aiMove(rng), rng); y.hp -= r.b; x.hp -= r.a; } if (y.hp <= 0) wins++; }
+  ok(wins > 60, 'the trained one wins most scraps (' + wins + '/100)');
+}
 // the money-changer
 {
   const { change, purseText } = await import('../src/sim/trade.js');

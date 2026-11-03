@@ -17,7 +17,7 @@ import { roleLabel, inTavern, walkable } from '../sim/townsfolk.js';
 import { Convo, newStory, addNote } from '../sim/dialogue.js';
 import { scriptFor, morning } from '../sim/story.js';
 import { buy as buyGoodRaw, change as changeMoney, purseText } from '../sim/trade.js';
-import { breakUp } from '../sim/combat.js';
+import { breakUp, fighter, round as scrapRound, aiMove, MOVES } from '../sim/combat.js';
 import { makeAudio } from './audio.js';
 import { initTouch } from './touch.js';
 import { Round, prize, FEE as ARCH_FEE } from '../sim/archery.js';
@@ -247,6 +247,12 @@ $('talk').addEventListener('click', () => { if (convo && !convo.choices().length
 window.addEventListener('wheel', (e) => { cam.want = Math.max(2.2, Math.min(14, cam.want * (e.deltaY > 0 ? 1.12 : 0.9))); }, { passive: true });
 window.addEventListener('keydown', (e) => {
   keys.add(e.code);
+  if (scrap) {
+    e.preventDefault();
+    if (/^(Digit|Numpad)[1-3]$/.test(e.code)) scrapMove(MOVES[Number(e.code.slice(-1)) - 1]);
+    else if (scrap.done && (e.code === 'Enter' || e.code === 'Space' || e.code === 'Escape')) closeScrap();
+    return;
+  }
   if (range) {
     if (e.code === 'Escape' || e.code === 'KeyQ') { e.preventDefault(); closeRange(); return; }
     if (e.code === 'Space' || e.code === 'Enter' || e.code === 'KeyE') { e.preventDefault(); rangeLoose(); }
@@ -405,7 +411,7 @@ function gameKey(act, i) {
 function buyGood(bag, id) { const r = buyGoodRaw(purse(), bag, id); if (r.ok) { STORY.purse = r.purse; saveStory(); applyTraits(); } return r; }
 // ── the archery butts ─────────────────────────────────────────────────────────────────────────────────────────
 let range = null;
-const inGame = () => !!(gameTable || range);
+const inGame = () => !!(gameTable || range || scrap);
 function nearButts() { const b = W.butts(); return Math.hypot(walker.pos[0] - b.mx, walker.pos[2] - b.mz) < 2.2 && Math.abs(walker.pos[1] - b.my) < 1.5; }
 function startRange() {
   if (purse() < FEE) { hint('The bowman wants ' + FEE + ' dinar for three arrows.', 3000); return; }
@@ -431,6 +437,37 @@ function rangeLoose() {
   if (r.done) { const pr = prize(r.total); if (pr) { STORY.purse = purse() + pr; saveStory(); } }
   drawRange({ x: a.x, y: a.y });
 }
+// ── a fistfight ───────────────────────────────────────────────────────────────────────────────────────────────
+let scrap = null;
+function startScrap(name) {
+  const you = fighter('you', character.traits), him = fighter(name, { strength: 1 + (name.length % 2), agility: 1, endurance: 1 + (name.length % 3) });
+  you.hp = Math.round(you.max * (0.5 + 0.5 * walker.stamina / walker.staminaMax));      // tired, she starts hurt
+  scrap = { you, him, name, log: 'Square up. Choose your move.', done: false }; keys.clear(); drawScrap();
+}
+function drawScrap() {
+  const s = scrap; if (!s) return; $('scrap').classList.remove('gone');
+  $('sctitle').textContent = 'A scrap with ' + s.name;
+  const bar = (f) => '<div class="hp"><i style="width:' + Math.max(0, 100 * f.hp / f.max) + '%"></i></div>';
+  $('schp').innerHTML = '<div><b>You</b>' + bar(s.you) + '</div><div><b>' + s.name + '</b>' + bar(s.him) + '</div>';
+  $('scmsg').textContent = s.log;
+  $('scbtns').innerHTML = s.done ? '<button data-m="end">Done</button>' : MOVES.map((m, i) => '<button data-m="' + m + '">' + (i + 1) + ' ' + m[0].toUpperCase() + m.slice(1) + '</button>').join('');
+  for (const b of document.querySelectorAll('#scbtns button')) b.onclick = () => scrapMove(b.dataset.m);
+}
+function scrapMove(m) {
+  const s = scrap; if (!s) return;
+  if (s.done || m === 'end') { closeScrap(); return; }
+  const r = scrapRound(s.you, s.him, m, aiMove(Math.random), Math.random);
+  s.him.hp -= r.b; s.you.hp -= r.a; s.log = r.note + (r.b ? ' (-' + r.b + ' to him)' : '') + (r.a ? ' (-' + r.a + ' to you)' : '');
+  walker.stamina = Math.max(0, walker.stamina - 3);
+  if (s.him.hp <= 0 || s.you.hp <= 0) {
+    s.done = true;
+    if (s.him.hp <= 0) { STORY.purse = purse() + 2; s.log = s.name + ' laughs it off and pays up: +2 dinar.'; addNote(STORY, 'scrap_won', 'I won a friendly scrap in the market square against ' + s.name + '. Nobody here is as hard as the fear makes them sound.', clock.day); }
+    else { STORY.purse = Math.max(0, purse() - 2); s.log = 'You are down. ' + s.name + ' helps you up: -2 dinar.'; }
+    saveStory();
+  }
+  drawScrap();
+}
+function closeScrap() { scrap = null; $('scrap').classList.add('gone'); }
 function closeRange() { range = null; $('range').classList.add('gone'); }
 function closeGame() { gameTable = null; $('game').classList.add('gone'); saveStory(); }
 // ── events: things that happen on their own, whether or not she is there ───────────────────────────────────────
@@ -534,6 +571,10 @@ function drawConvo() {
 function talkKey(i) {
   if (!convo) return;
   if (i === 'next') convo.next(); else if (!convo.pick(i)) return;
+  if (convo.act && convo.act[0] === 'scrap') {
+    const who2 = convo.act[1]; convo.act = null;
+    if (purse() < 2) { STORY.shopmsg = 'No: you cannot cover the 2 dinar.'; } else { endTalk(); startScrap(who2); return; }
+  }
   if (convo.act && convo.act[0] === 'pay') {
     const n = convo.act[1]; convo.act = null;
     if (purse() >= n) { STORY.purse = purse() - n; saveStory(); } else convo.go('nopay');

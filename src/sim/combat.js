@@ -27,3 +27,23 @@ export function breakUp(traits, rng) {
   const ok = rng() < chance;
   return { ok, chance, cost: ok ? 5 : 25 };            // cost: stamina lost
 }
+
+// a fistfight in rounds: each side picks Strike, Guard or Feint. Strike beats Feint, Feint beats Guard, Guard beats Strike
+// (a read guard turns the blow back a little). Returns { a, b, note } - damage to each side this round.
+export const MOVES = ['strike', 'guard', 'feint'];
+const BEATS = { strike: 'feint', feint: 'guard', guard: 'strike' };
+export function round(A, B, ma, mb, rng) {
+  const out = { a: 0, b: 0, note: '' };
+  if (ma === mb) {
+    if (ma === 'strike') { out.b = blow(A, B, rng); out.a = blow(B, A, rng); out.note = 'You trade blows.'; }
+    else out.note = ma === 'guard' ? 'You circle, hands up.' : 'You both dance and feint.';
+  } else if (BEATS[ma] === mb) {
+    const d = blow(A, B, rng) + (ma === 'strike' ? 1 : 0); out.b = d; out.note = d ? (ma === 'strike' ? 'You catch him mid-feint.' : 'You slip his guard.') : 'He rides it out.';
+  } else {
+    const d = blow(B, A, rng) + (mb === 'strike' ? 1 : 0); out.a = d; out.note = d ? (mb === 'strike' ? 'He lands one as you feint.' : 'He slips your guard.') : 'You ride it out.';
+  }
+  if (ma === 'guard' && mb === 'strike') { out.a = Math.max(0, out.a - 1); out.b = Math.max(out.b, rng() < 0.4 ? 1 : 0); out.note = 'You take the blow on your arms' + (out.b ? ' and shove him back.' : '.'); }
+  return out;
+}
+// the other side's pick: mostly random, a little drawn to strike
+export const aiMove = (rng) => { const r = rng(); return r < 0.4 ? 'strike' : r < 0.7 ? 'guard' : 'feint'; };

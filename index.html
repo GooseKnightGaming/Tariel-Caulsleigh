@@ -56,6 +56,11 @@
   #rcross { position: absolute; width: 22px; height: 22px; margin: -11px; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px #000; pointer-events: none; }
   .rhit { position: absolute; width: 8px; height: 8px; margin: -4px; background: #3a2a1a; border: 1px solid #fff; border-radius: 50%; }
   #rmsg { min-height: 24px; font-size: 18px; } #rhelp { font-size: 14px; color: var(--dim); }
+  #scrap { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100vw - 32px)); background: var(--dark); border: 2px solid var(--red); padding: 14px 20px; text-align: center; box-sizing: border-box; }
+  #sctitle { font-size: 22px; font-weight: 700; color: #f7dca0; margin-bottom: 8px; }
+  #schp { display: flex; gap: 16px; } #schp > div { flex: 1; } .hp { height: 12px; background: #3a1a1a; border: 1px solid #8a6a3a; margin-top: 4px; } .hp i { display: block; height: 100%; background: #c0392b; }
+  #scmsg { min-height: 26px; font-size: 18px; margin: 12px 0; } #scbtns { display: flex; gap: 8px; justify-content: center; } #scbtns button { flex: 1; padding: 10px 6px; font: inherit; background: #3a2a1a; color: #f2e4c0; border: 1px solid #8a6a3a; cursor: pointer; }
+  #schelp { font-size: 13px; color: var(--dim); margin-top: 8px; }
   #talkchoices { margin-top: 8px; }
   #talkchoices div { font-size: 19px; padding: 3px 0; color: #e8d8b0; cursor: pointer; }
   #talkchoices div b { color: #f7dca0; margin-right: 8px; }
@@ -140,6 +145,10 @@
   <div id="rboard"><div class="ring r5"></div><div class="ring r4"></div><div class="ring r3"></div><div class="ring r2"></div><div class="ring r1"></div><div id="rarrows"></div><div id="rcross"></div></div>
   <div id="rmsg"></div><div id="rhelp"></div>
 </div>
+<div id="scrap" class="gone">
+  <div id="sctitle"></div><div id="schp"></div><div id="scmsg"></div><div id="scbtns"></div>
+  <div id="schelp">1 Strike - 2 Guard - 3 Feint. Strike beats Feint, Feint beats Guard, Guard beats Strike.</div>
+</div>
 <div id="debug" class="gone"></div>
 
 <div id="pause" class="gone"><div id="pausepage" data-page="main">
@@ -218,6 +227,6 @@
   <kbd>Q</kbd> Tariel ⇄ Thiah · <kbd>E</kbd> use · <kbd>M</kbd> map<br><kbd>I</kbd> gear · <kbd>K</kbd> character · <kbd>T</kbd> (hold) hurry time<br><kbd>Esc</kbd> pause · <kbd>F3</kbd> debug line · <kbd>H</kbd> hide this
 </div>
 
-<script src="game.js?v=T0.2.mw0e2dz1"></script>
+<script src="game.js?v=T0.2.mw0tiew5"></script>
 </body>
 </html>
