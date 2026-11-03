@@ -653,6 +653,8 @@ function drawGear() {
 
 // ── the pause menu (Esc) ──────────────────────────────────────────────────
 const SETTINGS = { sens: 1, invert: false, shadows: true, res: 'normal', debug: true };
+// a phone starts light (no shadows, lower resolution, no debug line) until she changes it herself
+try { if (!localStorage.getItem('tariel.settings') && TOUCH) Object.assign(SETTINGS, { shadows: false, res: 'low', debug: false }); } catch (e) { /* fine */ }
 try { Object.assign(SETTINGS, JSON.parse(localStorage.getItem('tariel.settings') || '{}')); } catch (e) { /* none saved */ }
 function saveSettings() { try { localStorage.setItem('tariel.settings', JSON.stringify(SETTINGS)); } catch (e) { /* fine */ } }
 function applySettings() {
