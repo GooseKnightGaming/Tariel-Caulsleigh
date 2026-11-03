@@ -110,6 +110,10 @@ function folkScript(p, ctx) {
     menu.push({ text: 'Fancy a scrap? (2 dinar a side)', go: 't_scrap' });
     script.t_scrap = { who, line: ctx.face === 'tariel' ? 'With the Baron\'s own? ...Ha. Go on, then, my lady - no marks on the face.' : 'You? Ha. Go on, then, lass - but you pay if you lose.', choices: [{ text: 'Square up.', act: ['scrap', p.who] }, { text: 'Never mind.', go: 'start' }] };
   }
+  if (p.role === 'guard' && ctx.face === 'tariel') {
+    menu.push({ text: 'Run the sword drill with me.', go: 't_drill' });
+    script.t_drill = { who, line: 'Unterofficer. Gladly - a call, you repeat it. High cut, low cut, left parry, right parry. Keep your wrists loose.', choices: [{ text: 'Begin.', act: ['drill'] }, { text: 'Another time.', go: 'start' }] };
+  }
   menu.push({ text: 'Goodbye.' });
   script.start = { who, line: G[ctx.face][st], choices: menu };
   return script;

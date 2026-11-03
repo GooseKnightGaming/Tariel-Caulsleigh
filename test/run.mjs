@@ -223,6 +223,21 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
   const q = ps.find((x) => x.kind === 'barrel');
   ok(SO.solidList().some((s) => Math.abs(s.x - q.x) < 0.01 && Math.abs(s.z - q.z) < 0.01), 'a barrel is solid');
 }
+// the sword drill
+{
+  const { Drill, CALLS, canEarn } = await import('../src/sim/drill.js');
+  let seed = 5; const rng = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const d = new Drill(rng); ok(d.call.length === 3 && d.phase === 'show', 'a drill starts with a three-call');
+  d.begin(); for (let i = 0; i < 2; i++) ok(d.answer(d.call[i]) === 'ok', 'a right answer goes on');
+  ok(d.answer(d.call[2]) === 'round' && d.call.length === 4 && d.phase === 'show', 'a clean round lengthens the call');
+  d.begin(); ok(d.answer((d.call[0] + 1) % CALLS.length) === 'miss' && d.phase === 'miss', 'a wrong answer misses');
+  ok(d.retry() && d.phase === 'show', 'a miss can be tried again');
+  const w = new Drill(rng); let res; for (let r = 0; r < 3; r++) { w.begin(); for (const c of w.call.slice()) res = w.answer(c); }
+  ok(res === 'won' && w.won, 'three clean rounds win');
+  const m = new Drill(rng); for (let k = 0; k < 3; k++) { m.begin(); m.answer((m.call[0] + 1) % 4); m.retry(); }
+  ok(m.phase === 'done' && !m.won, 'three misses end the drill');
+  ok(canEarn({}, 2) && !canEarn({ drillDay: 2 }, 2) && canEarn({ drillDay: 2 }, 3), 'one trait point a day');
+}
 // a fistfight in rounds
 {
   const { fighter, round, aiMove, MOVES } = await import('../src/sim/combat.js');

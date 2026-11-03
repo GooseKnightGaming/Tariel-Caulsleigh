@@ -20,6 +20,7 @@ import { buy as buyGoodRaw, change as changeMoney, purseText } from '../sim/trad
 import { breakUp, fighter, round as scrapRound, aiMove, MOVES } from '../sim/combat.js';
 import { makeAudio } from './audio.js';
 import { initTouch } from './touch.js';
+import { Drill, CALLS, canEarn } from '../sim/drill.js';
 import { Round, prize, FEE as ARCH_FEE } from '../sim/archery.js';
 import { Table, RUNES, RUNE_NAMES, rank } from '../sim/threot.js';
 import { Figure, THIAH, TARIEL } from './figure.js';
@@ -247,6 +248,13 @@ $('talk').addEventListener('click', () => { if (convo && !convo.choices().length
 window.addEventListener('wheel', (e) => { cam.want = Math.max(2.2, Math.min(14, cam.want * (e.deltaY > 0 ? 1.12 : 0.9))); }, { passive: true });
 window.addEventListener('keydown', (e) => {
   keys.add(e.code);
+  if (drill) {
+    e.preventDefault();
+    if (e.code === 'Escape') closeDrill();
+    else if (/^(Digit|Numpad)[1-4]$/.test(e.code)) drillKey(Number(e.code.slice(-1)) - 1);
+    else if (e.code === 'Enter' || e.code === 'Space') drillKey('end');
+    return;
+  }
   if (scrap) {
     e.preventDefault();
     if (/^(Digit|Numpad)[1-3]$/.test(e.code)) scrapMove(MOVES[Number(e.code.slice(-1)) - 1]);
@@ -411,7 +419,7 @@ function gameKey(act, i) {
 function buyGood(bag, id) { const r = buyGoodRaw(purse(), bag, id); if (r.ok) { STORY.purse = r.purse; saveStory(); applyTraits(); } return r; }
 // ── the archery butts ─────────────────────────────────────────────────────────────────────────────────────────
 let range = null;
-const inGame = () => !!(gameTable || range || scrap);
+const inGame = () => !!(gameTable || range || scrap || drill);
 function nearButts() { const b = W.butts(); return Math.hypot(walker.pos[0] - b.mx, walker.pos[2] - b.mz) < 2.2 && Math.abs(walker.pos[1] - b.my) < 1.5; }
 function startRange() {
   if (purse() < FEE) { hint('The bowman wants ' + FEE + ' dinar for three arrows.', 3000); return; }
@@ -437,6 +445,40 @@ function rangeLoose() {
   if (r.done) { const pr = prize(r.total); if (pr) { STORY.purse = purse() + pr; saveStory(); } }
   drawRange({ x: a.x, y: a.y });
 }
+// ── the sword drill ────────────────────────────────────────────────────────────────────────────────────────────
+let drill = null, drillTimer = null;
+function startDrill() { drill = new Drill(Math.random); drill.msg = 'Watch the calls.'; keys.clear(); drawDrill(); showCall(); }
+function showCall() {
+  const d = drill; if (!d) return; clearTimeout(drillTimer);
+  let i = 0; d.phase = 'show'; d.shown = -1; d.msg = 'Watch the calls (' + (d.round + 1) + ' of ' + d.rounds + ').'; drawDrill();
+  const tick = () => { if (!drill) return; if (i < d.call.length) { d.shown = d.call[i++]; drawDrill(); drillTimer = setTimeout(() => { d.shown = -1; drawDrill(); drillTimer = setTimeout(tick, 180); }, 650); } else { d.begin(); d.msg = 'Now you.'; drawDrill(); } };
+  drillTimer = setTimeout(tick, 600);
+}
+function drawDrill() {
+  const d = drill; if (!d) return; $('drill').classList.remove('gone');
+  $('dtitle').textContent = 'Sword drill - round ' + Math.min(d.round + 1, d.rounds) + ' of ' + d.rounds;
+  $('dcall').textContent = d.shown >= 0 ? CALLS[d.shown] : (d.phase === 'answer' ? d.call.map((_, i) => (i < d.pos ? '●' : '○')).join(' ') : ' ');
+  $('dmsg').textContent = d.msg || '';
+  $('dbtns').innerHTML = d.phase === 'done' || d.phase === 'miss' ? '<button data-m="end">' + (d.phase === 'miss' ? 'Again' : 'Done') + '</button>' : CALLS.map((c, i) => '<button data-m="' + i + '">' + (i + 1) + ' ' + c + '</button>').join('');
+  for (const b of document.querySelectorAll('#dbtns button')) b.onclick = () => drillKey(b.dataset.m === 'end' ? 'end' : Number(b.dataset.m));
+}
+function drillKey(i) {
+  const d = drill; if (!d) return;
+  if (i === 'end') {
+    if (d.phase === 'miss') { if (d.retry()) { showCall(); return; } d.msg = 'Three slips. The sergeant calls it for today.'; drawDrill(); return; }
+    if (d.phase === 'done') { closeDrill(); return; }
+    return;
+  }
+  const r = d.answer(i);
+  if (r === 'miss') { d.msg = 'Wrong call - ' + (d.misses >= 3 ? 'that is three.' : 'again.'); if (d.misses >= 3) d.phase = 'done'; }
+  else if (r === 'round') { d.msg = 'Clean. Longer next.'; walker.stamina = Math.max(0, walker.stamina - 4); setTimeout(showCall, 900); }
+  else if (r === 'won') {
+    if (canEarn(STORY, clock.day)) { STORY.drillDay = clock.day; character.points++; applyTraits(); d.msg = 'Clean all through. A trait point: press K.'; addNote(STORY, 'drill_' + clock.day, 'Drilled with the guards; they say the Baron\'s daughter has a good wrist. (A trait point.)', clock.day); saveStory(); }
+    else d.msg = 'Clean all through. (You have already earned today\'s point.)';
+  }
+  drawDrill();
+}
+function closeDrill() { clearTimeout(drillTimer); drill = null; $('drill').classList.add('gone'); }
 // ── a fistfight ───────────────────────────────────────────────────────────────────────────────────────────────
 let scrap = null;
 function startScrap(name) {
@@ -571,6 +613,7 @@ function drawConvo() {
 function talkKey(i) {
   if (!convo) return;
   if (i === 'next') convo.next(); else if (!convo.pick(i)) return;
+  if (convo.act && convo.act[0] === 'drill') { convo.act = null; endTalk(); startDrill(); return; }
   if (convo.act && convo.act[0] === 'scrap') {
     const who2 = convo.act[1]; convo.act = null;
     if (purse() < 2) { STORY.shopmsg = 'No: you cannot cover the 2 dinar.'; } else { endTalk(); startScrap(who2); return; }
@@ -853,4 +896,4 @@ pauseWiring(); applySettings();
 })();
 
 // for testing, and for curiosity
-window.TARIEL = { get horse() { return horse; }, get paused() { return paused; }, selves, camera, opening, skip: () => { startOpening(); step = SCRIPT.length - 2; waiting = false; next(); }, app, pc, W, get walker() { return walker; }, clock, map, cam, cast, get tariel() { return tariel; }, get mode() { return mode; }, get town() { return town; }, get convo() { return convo; }, get STORY() { return STORY; }, Figure, THIAH, TARIEL, next, VERSION };
+window.TARIEL = { get horse() { return horse; }, get paused() { return paused; }, selves, camera, opening, skip: () => { startOpening(); step = SCRIPT.length - 2; waiting = false; next(); }, app, pc, W, get walker() { return walker; }, clock, map, cam, cast, get tariel() { return tariel; }, get mode() { return mode; }, get town() { return town; }, get convo() { return convo; }, get STORY() { return STORY; }, get drill() { return drill; }, get character() { return character; }, Figure, THIAH, TARIEL, next, VERSION };
