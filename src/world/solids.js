@@ -2,7 +2,7 @@
 // and the floors you stand on inside houses. Pure (tested in node).
 // A solid is an upright box turned yaw about y: centre (x, z), half-sizes (hx, hz), from y0 to y1.
 
-import { buildings, wallCells, trees, stalls, STOREY, PLACES, TAVERN_ROOM } from './world.js';
+import { buildings, wallCells, trees, stalls, props, STOREY, PLACES, TAVERN_ROOM } from './world.js';
 
 const CELL = 16;
 let INDEX = null, FLOORS = null;
@@ -53,6 +53,12 @@ export function solidList() {
   for (const st of stalls()) {
     addBox(out, st, 0, 0, 1.35, 0.4, -0.5, 1.1);
     for (const px of [-1.45, 1.45]) for (const pz of [-1.35, 0.55]) addBox(out, st, px, pz, 0.07, 0.07, -0.5, 2.7);
+  }
+  // barrels, crates, hay and the handcart
+  for (const q of props()) {
+    const c = Math.cos(q.yaw), sn = Math.sin(q.yaw);
+    const hx = q.kind === 'barrel' ? 0.34 : q.kind === 'crate' ? q.s / 2 : q.kind === 'bale' ? 0.45 : 0.8, hz = q.kind === 'barrel' ? 0.34 : q.kind === 'crate' ? q.s / 2 : q.kind === 'bale' ? 0.28 : 0.6;
+    out.push({ x: q.x, z: q.z, yaw: q.yaw, c, s: sn, hx, hz, y0: q.y - 0.2, y1: q.y + (q.kind === 'cart' ? 0.95 : q.kind === 'barrel' ? q.s : 0.6) });
   }
   // tree trunks
   for (const t of trees()) out.push({ x: t.x, z: t.z, yaw: 0, c: 1, s: 0, hx: 0.3 * t.size, hz: 0.3 * t.size, y0: t.y - 1, y1: t.y + 4 });

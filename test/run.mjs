@@ -216,6 +216,13 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
   ok(hi > lo && lo >= 0.25 && hi <= 0.9, 'strength and presence help stepping in');
   ok(breakUp({}, () => 0).ok && !breakUp({}, () => 0.99).ok && breakUp({}, () => 0.99).cost > breakUp({}, () => 0).cost, 'failing costs more wind');
 }
+// props stand about, and you cannot walk through them
+{
+  const { props } = await import('../src/world/world.js'), SO = await import('../src/world/solids.js');
+  const ps = props(); ok(ps.length >= 10 && ps.some((q) => q.kind === 'cart') && ps.some((q) => q.kind === 'barrel'), 'props exist (' + ps.length + ')');
+  const q = ps.find((x) => x.kind === 'barrel');
+  ok(SO.solidList().some((s) => Math.abs(s.x - q.x) < 0.01 && Math.abs(s.z - q.z) < 0.01), 'a barrel is solid');
+}
 // a fistfight in rounds
 {
   const { fighter, round, aiMove, MOVES } = await import('../src/sim/combat.js');

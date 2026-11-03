@@ -234,6 +234,27 @@ export function butts() {
   butts.cache = { x: tx, z: tz, y: heightAt(tx, tz), mx, mz, my: heightAt(mx, mz), yaw: Math.atan2(mx - tx, mz - tz) };
   return butts.cache;
 }
+// the small things that stand about: barrels, crates, hay bales and a handcart. Shared by the scene (to draw them) and
+// solids (to stop you walking through them). kind: barrel | crate | bale | cart; s: size
+export function props() {
+  if (props.cache) return props.cache;
+  const out = [], put = (kind, x, z, yaw, s) => out.push({ kind, x, z, y: heightAt(x, z), yaw, s });
+  const t = tavern();
+  if (t) {
+    for (const [lx, lz] of [[-t.w + 0.6, t.d + 0.9], [-t.w + 1.4, t.d + 0.7], [t.w - 0.7, t.d + 0.9]]) { const [x, z] = toWorld(t, lx, lz); put('barrel', x, z, 0, 0.82); }
+    { const [x, z] = toWorld(t, t.w - 1.5, t.d + 0.8); put('crate', x, z, t.yaw + 0.3, 0.55); }
+    { const [x, z] = toWorld(t, t.w - 0.9, t.d + 1.5); put('crate', x, z, t.yaw - 0.2, 0.45); }
+  }
+  for (const st of stalls()) {
+    const c = Math.cos(st.yaw), sn = Math.sin(st.yaw), at = (lx, lz) => [st.x + lx * c + lz * sn, st.z - lx * sn + lz * c];
+    { const [x, z] = at(1.9, -1.1); put('crate', x, z, st.yaw + 0.2, 0.55); }
+    { const [x, z] = at(-1.9, -1.0); if (st.kind === 'cloth') put('bale', x, z, st.yaw, 1); else put('barrel', x, z, 0, 0.75); }
+  }
+  const [cx, cz] = fromRiver(15, -108), wp = fromRiver(0, -105);
+  put('cart', cx, cz, Math.atan2(wp[0] - cx, wp[1] - cz), 1);
+  props.cache = out;
+  return out;
+}
 // where a stallholder stands (behind the counter), and what is out in front of it
 export function stallSpot(st) { const c = Math.cos(st.yaw), s = Math.sin(st.yaw); return [st.x - 0.95 * s, st.z - 0.95 * c]; }
 // a house's walls, cell by cell: [{ side: 'front'|'back'|'left'|'right', i, lx, lz, rot, door }]
