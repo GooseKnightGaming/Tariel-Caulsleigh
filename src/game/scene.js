@@ -191,6 +191,33 @@ function buttsInto(g) {
   g.at(b.mx, b.my - 0.02, b.mz, b.yaw);
   g.box(-0.5, 0, -0.04, 0.5, 0.05, 0.04, [0.9, 0.85, 0.7]);                              // the mark
 }
+// small things that make the town look used: barrels and crates by the tavern door and the stalls, hay, a handcart
+function propsInto(g) {
+  const wood = [0.40, 0.29, 0.18], woodd = [0.30, 0.22, 0.14], hay = [0.80, 0.68, 0.30], band = [0.22, 0.2, 0.18];
+  const barrel = (x, z, h = 0.82) => { const y = W.heightAt(x, z); g.at(x, y - 0.03, z, 0); g.cyl(0.30, 0.34, 0, h * 0.5, 10, wood); g.cyl(0.34, 0.29, h * 0.5, h, 10, wood, woodd); g.cyl(0.345, 0.345, h * 0.28, h * 0.32, 10, band); g.cyl(0.345, 0.345, h * 0.68, h * 0.72, 10, band); };
+  const crate = (x, z, yaw, s = 0.55) => { const y = W.heightAt(x, z); g.at(x, y - 0.03, z, yaw); g.box(-s / 2, 0, -s / 2, s / 2, s, s / 2, { top: wood, side: woodd }); g.box(-s / 2 - 0.01, s * 0.45, -s / 2 - 0.01, s / 2 + 0.01, s * 0.55, s / 2 + 0.01, band); };
+  const bale = (x, z, yaw) => { const y = W.heightAt(x, z); g.at(x, y - 0.03, z, yaw); g.box(-0.45, 0, -0.28, 0.45, 0.45, 0.28, hay); g.box(-0.3, 0.45, -0.22, 0.3, 0.8, 0.22, [0.86, 0.74, 0.34]); };
+  const t = W.tavern();
+  if (t) {
+    for (const [lx, lz] of [[-t.w + 0.6, t.d + 0.9], [-t.w + 1.4, t.d + 0.7], [t.w - 0.7, t.d + 0.9]]) { const [x, z] = W.toWorld(t, lx, lz); barrel(x, z); }
+    { const [x, z] = W.toWorld(t, t.w - 1.5, t.d + 0.8); crate(x, z, t.yaw + 0.3); }
+    { const [x, z] = W.toWorld(t, t.w - 0.9, t.d + 1.5); crate(x, z, t.yaw - 0.2, 0.45); }
+  }
+  for (const st of W.stalls()) {
+    const c = Math.cos(st.yaw), s = Math.sin(st.yaw);
+    const at = (lx, lz) => [st.x + lx * c + lz * s, st.z - lx * s + lz * c];
+    { const [x, z] = at(1.9, -1.1); crate(x, z, st.yaw + 0.2); }
+    if (st.kind === 'cloth') { const [x, z] = at(-1.9, -1.0); bale(x, z, st.yaw); } else { const [x, z] = at(-1.9, -1.0); barrel(x, z, 0.75); }
+  }
+  // a handcart at the market's east side: a bed, a hay load, two handles and two stone skids for want of wheels
+  const [cx, cz] = W.fromRiver(15, -108), cy = W.heightAt(cx, cz), wp = W.fromRiver(0, -105), yaw = Math.atan2(wp[0] - cx, wp[1] - cz);
+  g.at(cx, cy - 0.03, cz, yaw);
+  g.box(-0.8, 0.45, -0.55, 0.8, 0.55, 0.55, wood);
+  g.box(-0.8, 0.55, -0.55, 0.8, 0.9, -0.45, woodd); g.box(-0.8, 0.55, 0.45, 0.8, 0.9, 0.55, woodd);
+  g.box(-0.7, 0.55, -0.45, 0.7, 0.95, 0.45, hay);
+  g.box(-0.2, 0.4, 0.55, -0.12, 0.5, 1.7, woodd); g.box(0.12, 0.4, 0.55, 0.2, 0.5, 1.7, woodd);
+  for (const px of [-0.55, 0.55]) g.box(px - 0.08, 0, -0.5, px + 0.08, 0.45, 0.5, [0.5, 0.48, 0.44]);
+}
 function bridgeInto(g) {
   const a = W.BRIDGE.from, b = W.BRIDGE.to, steps = 14, half = W.BRIDGE.w / 2;
   const yaw = Math.atan2(b[0] - a[0], b[1] - a[1]);
@@ -245,6 +272,7 @@ export function buildTowns(pc, app, list) {
   }
   for (const st of W.stalls()) stallInto(g, st);
   buttsInto(g);
+  propsInto(g);
   bridgeInto(g);
   const e = new pc.Entity('towns');
   e.addComponent('render', { meshInstances: [new pc.MeshInstance(g.mesh(pc, app.graphicsDevice), vcMaterial(pc, { cull: false }))], castShadows: true, receiveShadows: true });
