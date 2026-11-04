@@ -255,6 +255,13 @@ export function props() {
   props.cache = out;
   return out;
 }
+// Cob Harker's goat pen: a fenced square at the town's south-east edge, its gate (on the side towards the town) left open
+export function pen() {
+  if (pen.cache) return pen.cache;
+  const [x, z] = fromRiver(42, -136), [tx, tz] = fromRiver(0, -105);
+  pen.cache = { x, z, y: heightAt(x, z), yaw: Math.atan2(tx - x, tz - z), half: 2.6 };
+  return pen.cache;
+}
 // where a stallholder stands (behind the counter), and what is out in front of it
 export function stallSpot(st) { const c = Math.cos(st.yaw), s = Math.sin(st.yaw); return [st.x - 0.95 * s, st.z - 0.95 * c]; }
 // a house's walls, cell by cell: [{ side: 'front'|'back'|'left'|'right', i, lx, lz, rot, door }]

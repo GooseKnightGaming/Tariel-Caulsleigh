@@ -381,6 +381,7 @@ function nearby() {
   if (!offer && nearGame()) offer = 'play';
   if (!offer && nearToast()) offer = 'toast';
   if (!offer && nearClue()) offer = 'search';
+  if (!offer && nearPen()) offer = 'pen';
   if (!offer && nearButts()) offer = 'shoot';
   offerPerson = null;
   if (!offer && town) { offerPerson = town.nearest(walker.pos[0], walker.pos[2], 2.3); if (offerPerson) offer = 'talk'; }
@@ -389,6 +390,7 @@ function nearby() {
   if (offer === 'sleep') $('prompt').innerHTML = '<kbd>E</kbd> Sleep until morning';
   else if (offer === 'talk') $('prompt').innerHTML = '<kbd>E</kbd> Talk to ' + offerPerson.p.who + ' (' + roleLabel(offerPerson.p) + ')';
   else if (offer === 'shoot') $('prompt').innerHTML = '<kbd>E</kbd> Shoot at the butts (' + FEE + ' dinar for three arrows)';
+  else if (offer === 'pen') $('prompt').innerHTML = '<kbd>E</kbd> Look at the goat pen';
   else if (offer === 'search') $('prompt').innerHTML = '<kbd>E</kbd> Look at the house with the open door';
   else if (offer === 'toast') $('prompt').innerHTML = '<kbd>E</kbd> Drink Toasts at the long table (' + STAKE + ' dinar a side)';
   else if (offer === 'play') $('prompt').innerHTML = '<kbd>E</kbd> Play Threot at the table (' + STAKE + ' dinar a hand)';
@@ -483,6 +485,16 @@ function searchHouse() {
   let line = 'The door stands unbarred. Inside: bread gone hard on the table, two cups, one chair pushed back as if someone had risen without a word. Nothing is broken.';
   if (wits >= 2) { addNote(STORY, 'house2', 'A grey woollen thread was caught on the latch of the open door, at about the height of a tall man\'s sleeve.', clock.day); line += ' On the latch, a single grey woollen thread, at a tall man\'s sleeve height.'; }
   else if (first) line += ' (You feel there is more to notice. A sharper eye - Wits - might find it.)';
+  hint(line, 11000); saveStory();
+}
+// Cob Harker's goat pen, once Nell has told her he is missing (or from the second morning)
+function nearPen() { if (nights < 2 && !STORY.notes.some((n) => n.id === 'cob')) return false; const p = W.pen(); return Math.hypot(walker.pos[0] - p.x, walker.pos[2] - p.z) < 4.5 && Math.abs(walker.pos[1] - p.y) < 2; }
+function searchPen() {
+  const wits = character.traits.wits || 1;
+  addNote(STORY, 'pen', 'Cob\'s goat pen: the gate wide open, the goats gone to the lane, his crook lying where he dropped it. He did not walk away from it.', clock.day);
+  let line = 'The gate is open and the goats have scattered. A shepherd\'s crook lies in the grass, as if let fall. A man who meant to leave would have taken it.';
+  if (wits >= 2) { addNote(STORY, 'pen2', 'In the soft ground by the pen: Cob\'s boot-prints going in, and a second set of longer strides coming from the lane. Only one set comes back out.', clock.day); line += ' In the mud: his boots going in, and longer strides coming from the lane. Only one set leaves.'; }
+  else line += ' (A sharper eye - Wits - might read the ground.)';
   hint(line, 11000); saveStory();
 }
 // ── Toasts: the drinking game (a DRAFT, see sim/toast.js) ────────────────────────────────────────────────────
@@ -709,6 +721,7 @@ function act() {
   if (offer === 'shoot') { startRange(); return; }
   if (offer === 'toast') { startToast(); return; }
   if (offer === 'search') { searchHouse(); return; }
+  if (offer === 'pen') { searchPen(); return; }
   if (offer === 'play') { startGame(); return; }
   if (offer === 'talk' && offerPerson) { startTalk(offerPerson); return; }
   if (offer === 'door' && offerDoor) { useDoor(offerDoor); return; }

@@ -223,6 +223,12 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
   const q = ps.find((x) => x.kind === 'barrel');
   ok(SO.solidList().some((s) => Math.abs(s.x - q.x) < 0.01 && Math.abs(s.z - q.z) < 0.01), 'a barrel is solid');
 }
+// the goat pen sits clear of buildings and open ground
+{
+  const p = W.pen(); ok(Number.isFinite(p.x) && Number.isFinite(p.y) && Math.abs(p.y - W.heightAt(p.x, p.z)) < 0.01, 'the pen stands on the ground');
+  const SO = await import('../src/world/solids.js'); const near = SO.solidList().filter((s) => Math.hypot(s.x - p.x, s.z - p.z) < 6 && s.y1 > p.y + 1.5);
+  ok(near.length === 0, 'no wall or tree inside the pen (' + near.length + ')');
+}
 // journal threads
 {
   const { threads, THREADS } = await import('../src/sim/story.js');

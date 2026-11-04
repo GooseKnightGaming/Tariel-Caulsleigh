@@ -212,6 +212,20 @@ function propsInto(g) {
     }
   }
 }
+// the goat pen: four rails round a square, the gate side open, a crook lying in the grass
+function penInto(g) {
+  const p = W.pen(), h = p.half, post = [0.34, 0.25, 0.16];
+  g.at(p.x, p.y - 0.05, p.z, p.yaw);
+  for (const [x, z] of [[-h, -h], [h, -h], [h, h], [-h, h], [0, -h], [h, 0], [-h, 0]]) g.box(x - 0.06, 0, z - 0.06, x + 0.06, 1.05, z + 0.06, post);
+  for (const y of [0.45, 0.85]) {
+    g.box(-h, y, -h - 0.025, h, y + 0.07, -h + 0.025, post);          // back
+    g.box(h - 0.025, y, -h, h + 0.025, y + 0.07, h, post);             // right
+    g.box(-h - 0.025, y, -h, -h + 0.025, y + 0.07, h, post);           // left
+    g.box(-h, y, h - 0.025, -h * 0.25, y + 0.07, h + 0.025, post);     // front, the left half only: the gate is open
+  }
+  g.box(0.5, 0.02, h * 0.8, 1.9, 0.06, h * 0.8 + 0.05, [0.32, 0.22, 0.12]);   // the crook, on the ground
+  g.box(1.8, 0.02, h * 0.8 - 0.12, 1.9, 0.06, h * 0.8 + 0.05, [0.32, 0.22, 0.12]);
+}
 function bridgeInto(g) {
   const a = W.BRIDGE.from, b = W.BRIDGE.to, steps = 14, half = W.BRIDGE.w / 2;
   const yaw = Math.atan2(b[0] - a[0], b[1] - a[1]);
@@ -267,6 +281,7 @@ export function buildTowns(pc, app, list) {
   for (const st of W.stalls()) stallInto(g, st);
   buttsInto(g);
   propsInto(g);
+  penInto(g);
   bridgeInto(g);
   const e = new pc.Entity('towns');
   e.addComponent('render', { meshInstances: [new pc.MeshInstance(g.mesh(pc, app.graphicsDevice), vcMaterial(pc, { cull: false }))], castShadows: true, receiveShadows: true });
