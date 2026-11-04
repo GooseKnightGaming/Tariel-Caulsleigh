@@ -380,6 +380,7 @@ function nearby() {
   }
   if (!offer && nearGame()) offer = 'play';
   if (!offer && nearToast()) offer = 'toast';
+  if (!offer && nearClue()) offer = 'search';
   if (!offer && nearButts()) offer = 'shoot';
   offerPerson = null;
   if (!offer && town) { offerPerson = town.nearest(walker.pos[0], walker.pos[2], 2.3); if (offerPerson) offer = 'talk'; }
@@ -388,6 +389,7 @@ function nearby() {
   if (offer === 'sleep') $('prompt').innerHTML = '<kbd>E</kbd> Sleep until morning';
   else if (offer === 'talk') $('prompt').innerHTML = '<kbd>E</kbd> Talk to ' + offerPerson.p.who + ' (' + roleLabel(offerPerson.p) + ')';
   else if (offer === 'shoot') $('prompt').innerHTML = '<kbd>E</kbd> Shoot at the butts (' + FEE + ' dinar for three arrows)';
+  else if (offer === 'search') $('prompt').innerHTML = '<kbd>E</kbd> Look at the house with the open door';
   else if (offer === 'toast') $('prompt').innerHTML = '<kbd>E</kbd> Drink Toasts at the long table (' + STAKE + ' dinar a side)';
   else if (offer === 'play') $('prompt').innerHTML = '<kbd>E</kbd> Play Threot at the table (' + STAKE + ' dinar a hand)';
   else if (offer === 'door') $('prompt').innerHTML = '<kbd>E</kbd> ' + (OPEN.has(offerDoor.id) ? 'Close' : 'Open') + ' the door' + (offerDoor.b.kind === 'tavern' ? ' (the tavern)' : '');
@@ -464,6 +466,25 @@ function chapterEnd() {
 }
 $('p-endgo').addEventListener('click', () => pause(false));
 $('p-endj').addEventListener('click', () => { drawJournal(); $('pausepage').dataset.page = 'journal'; });
+// ── a place to look: from the second morning, the river-lane house whose door was found open ───────────────────────
+let clueSpot = null;
+function clueSpotPos() {
+  if (clueSpot) return clueSpot;
+  const homes = W.buildings().filter((b) => b.kind !== 'well' && b.kind !== 'tavern');
+  const b = homes[Math.min(3, homes.length - 1)], cell = W.wallCells(b).find((c) => c.door), [x, z] = W.toWorld(b, cell.lx, cell.lz + 3.4);
+  clueSpot = { x, z, y: b.y };
+  return clueSpot;
+}
+function nearClue() { if (nights < 2) return false; const c = clueSpotPos(); return Math.hypot(walker.pos[0] - c.x, walker.pos[2] - c.z) < 2.2 && Math.abs(walker.pos[1] - c.y) < 1.5; }
+function searchHouse() {
+  const wits = character.traits.wits || 1, first = !STORY.flags.searched;
+  STORY.flags.searched = true;
+  addNote(STORY, 'house', 'The house on the river lane: a table laid for two, one chair pushed back, the bar off the door. Nothing broken. Nobody home.', clock.day);
+  let line = 'The door stands unbarred. Inside: bread gone hard on the table, two cups, one chair pushed back as if someone had risen without a word. Nothing is broken.';
+  if (wits >= 2) { addNote(STORY, 'house2', 'A grey woollen thread was caught on the latch of the open door, at about the height of a tall man\'s sleeve.', clock.day); line += ' On the latch, a single grey woollen thread, at a tall man\'s sleeve height.'; }
+  else if (first) line += ' (You feel there is more to notice. A sharper eye - Wits - might find it.)';
+  hint(line, 11000); saveStory();
+}
 // ── Toasts: the drinking game (a DRAFT, see sim/toast.js) ────────────────────────────────────────────────────
 let toast = null;
 function nearToast() { const t = W.tavern(), [x, z] = W.toWorld(t, -2.3, 0.6); return Math.hypot(walker.pos[0] - x, walker.pos[2] - z) < 2.3 && Math.abs(walker.pos[1] - t.y) < 1.2; }
@@ -687,6 +708,7 @@ function act() {
   if (inGame()) return;
   if (offer === 'shoot') { startRange(); return; }
   if (offer === 'toast') { startToast(); return; }
+  if (offer === 'search') { searchHouse(); return; }
   if (offer === 'play') { startGame(); return; }
   if (offer === 'talk' && offerPerson) { startTalk(offerPerson); return; }
   if (offer === 'door' && offerDoor) { useDoor(offerDoor); return; }
@@ -947,4 +969,4 @@ pauseWiring(); applySettings();
 })();
 
 // for testing, and for curiosity
-window.TARIEL = { get horse() { return horse; }, get paused() { return paused; }, selves, camera, opening, skip: () => { startOpening(); step = SCRIPT.length - 2; waiting = false; next(); }, app, pc, W, get walker() { return walker; }, clock, map, cam, cast, get tariel() { return tariel; }, get mode() { return mode; }, get town() { return town; }, get convo() { return convo; }, get STORY() { return STORY; }, get drill() { return drill; }, get character() { return character; }, Figure, THIAH, TARIEL, next, VERSION };
+window.TARIEL = { get horse() { return horse; }, get paused() { return paused; }, selves, camera, opening, skip: () => { startOpening(); step = SCRIPT.length - 2; waiting = false; next(); }, app, pc, W, get walker() { return walker; }, clock, map, cam, cast, get tariel() { return tariel; }, get mode() { return mode; }, get town() { return town; }, get convo() { return convo; }, get STORY() { return STORY; }, get drill() { return drill; }, get nights() { return nights; }, set nights(v) { nights = v; }, get character() { return character; }, Figure, THIAH, TARIEL, next, VERSION };

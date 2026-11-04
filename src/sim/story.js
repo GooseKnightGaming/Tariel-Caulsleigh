@@ -224,8 +224,8 @@ export function morning(nights, state) {
 
 // ── the journal's threads: what she has learned, grouped by what it is about (DRAFT wording) ─────────────────────
 export const THREADS = [
-  { title: 'The man in the grey coat', ids: ['greycoat', 'shadow_night'], of: 'Seen at dusk, never speaking. Who is he?' },
-  { title: 'The missing', ids: ['cob', 'm2'], of: 'People gone, doors left open, nobody saw.' },
+  { title: 'The man in the grey coat', ids: ['greycoat', 'shadow_night', 'house2'], of: 'Seen at dusk, never speaking. Who is he?' },
+  { title: 'The missing', ids: ['cob', 'm2', 'house'], of: 'People gone, doors left open, nobody saw.' },
   { title: 'Edda Wyke', ids: ['edda', 'm3'], of: 'Dead on the Shappel road.' },
   { title: 'The fighting', ids: ['brawl', 'brawl_seen', 'brawl_stopped', 'm1'], of: 'Friends who fight and cannot say why.' },
   { title: 'Elar', ids: ['elar', 'elar2'], of: 'A quiet lodger who asks a great many questions.' },
