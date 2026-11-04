@@ -15,7 +15,7 @@ import * as CH from '../sim/character.js';
 import { Town } from './townsfolk.js';
 import { roleLabel, inTavern, walkable } from '../sim/townsfolk.js';
 import { Convo, newStory, addNote } from '../sim/dialogue.js';
-import { scriptFor, morning } from '../sim/story.js';
+import { scriptFor, morning, threads as journalThreads } from '../sim/story.js';
 import { buy as buyGoodRaw, change as changeMoney, purseText } from '../sim/trade.js';
 import { breakUp, fighter, round as scrapRound, aiMove, MOVES } from '../sim/combat.js';
 import { makeAudio } from './audio.js';
@@ -716,6 +716,10 @@ let character = CH.newCharacter();
 try { character = CH.load(localStorage.getItem('tariel.character')); } catch (e) { /* a fresh one */ }
 function drawJournal() {
   const j = $('journal'); j.innerHTML = '<div class="note"><b>Purse:</b> ' + purseText({ dinar: purse(), librar: librar() }) + '</div>';
+  const th = journalThreads(STORY);
+  if (th.threads.length) {
+    j.innerHTML += '<div class="note"><b>What ties together</b></div>' + th.threads.map((t) => '<div class="note"><b>' + t.title + '</b> (' + t.got.length + '/' + t.total + ') <span class="about">' + t.about + '</span></div>').join('') + (th.note ? '<div class="note"><i>' + th.note + '</i></div>' : '') + '<div class="note"><b>Everything you wrote down</b></div>';
+  }
   if (!STORY.notes.length) { j.innerHTML += '<div class="note">Nothing yet. Talk to people; what matters is written here.</div>'; return; }
   for (const n of STORY.notes) { const d = document.createElement('div'); d.className = 'note'; d.textContent = 'Day ' + n.day + ' - ' + n.text; j.append(d); }
 }

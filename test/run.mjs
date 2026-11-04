@@ -223,6 +223,16 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
   const q = ps.find((x) => x.kind === 'barrel');
   ok(SO.solidList().some((s) => Math.abs(s.x - q.x) < 0.01 && Math.abs(s.z - q.z) < 0.01), 'a barrel is solid');
 }
+// journal threads
+{
+  const { threads, THREADS } = await import('../src/sim/story.js');
+  const { newStory, addNote } = await import('../src/sim/dialogue.js');
+  const st = newStory(); ok(threads(st).threads.length === 0, 'no clues, no threads');
+  for (const id of ['greycoat', 'cob', 'edda', 'brawl']) addNote(st, id, 'x ' + id, 1);
+  const r = threads(st); ok(r.threads.length === 4 && r.note, 'four threads make the pattern note');
+  ok(r.threads.find((t) => t.title === 'Edda Wyke').got.length === 1, 'a thread counts its clues');
+  const all = new Set(THREADS.flatMap((t) => t.ids)); ok(all.size === THREADS.reduce((a, t) => a + t.ids.length, 0), 'no clue is in two threads');
+}
 // Toasts (draft drinking game)
 {
   const { Toasts, GOAL } = await import('../src/sim/toast.js');

@@ -221,3 +221,19 @@ export function morning(nights, state) {
     notes: [told('m3', 'Morning, day four: the third night is over. A rider came in at dawn from the north with news the keeper will not repeat to me, and a woman in Shappel-ont\'-Laik is dead. Whoever it is, he is ahead of us on the road.')],
     line: 'You have kept your three nights. Stanlech looks the same as it did, and it is not.' };
 }
+
+// ── the journal's threads: what she has learned, grouped by what it is about (DRAFT wording) ─────────────────────
+export const THREADS = [
+  { title: 'The man in the grey coat', ids: ['greycoat', 'shadow_night'], of: 'Seen at dusk, never speaking. Who is he?' },
+  { title: 'The missing', ids: ['cob', 'm2'], of: 'People gone, doors left open, nobody saw.' },
+  { title: 'Edda Wyke', ids: ['edda', 'm3'], of: 'Dead on the Shappel road.' },
+  { title: 'The fighting', ids: ['brawl', 'brawl_seen', 'brawl_stopped', 'm1'], of: 'Friends who fight and cannot say why.' },
+  { title: 'Elar', ids: ['elar', 'elar2'], of: 'A quiet lodger who asks a great many questions.' },
+  { title: 'The fear', ids: ['alone', 'm2b'], of: 'Doors barred at dusk; the watch doubled.' },
+];
+export function threads(state) {
+  const have = new Map(state.notes.map((n) => [n.id, n.text]));
+  const out = THREADS.map((t) => ({ title: t.title, about: t.of, total: t.ids.length, got: t.ids.filter((i) => have.has(i)).map((i) => have.get(i)) })).filter((t) => t.got.length);
+  const note = out.length >= 4 ? 'The threads cross: the grey coat, the missing, the dead woman, the fights. Whoever he is, he is moving through Stanlech, and the town is learning to be afraid of the dark.' : null;
+  return { threads: out, note };
+}
