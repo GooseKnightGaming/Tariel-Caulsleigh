@@ -223,6 +223,16 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
   const q = ps.find((x) => x.kind === 'barrel');
   ok(SO.solidList().some((s) => Math.abs(s.x - q.x) < 0.01 && Math.abs(s.z - q.z) < 0.01), 'a barrel is solid');
 }
+// Toasts (draft drinking game)
+{
+  const { Toasts, GOAL } = await import('../src/sim/toast.js');
+  let seed = 3; const rng = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  let ended = 0, wins = 0; for (let g = 0; g < 200; g++) { const t = new Toasts({ endurance: 3, wits: 3 }, rng); let n = 0; while (!t.over && n++ < 50) t.step(['sip', 'bluff', 'sip'][n % 3]); if (t.over) ended++; if (t.won) wins++; }
+  ok(ended === 200, 'every game ends'); ok(wins > 40 && wins < 190, 'a sensible player wins some, not all (' + wins + '/200)');
+  const t = new Toasts({}, () => 0.99); t.me.drunk = 5; t.step('gulp'); ok(t.over === 'lost-drunk', 'too drunk loses');
+  const hi = new Toasts({ endurance: 5 }, rng), lo = new Toasts({}, rng); ok(hi.me.limit > lo.me.limit, 'endurance raises the limit');
+  ok(new Toasts({ wits: 5 }, rng).catchChance() < new Toasts({}, rng).catchChance(), 'wits make a bluff safer'); ok(GOAL === 8); { const u = new Toasts({}, () => 0.99); u.step('gulp'); ok(/^You gulp;/.test(u.log), 'the log reads right: ' + u.log); }
+}
 // the sword drill
 {
   const { Drill, CALLS, canEarn } = await import('../src/sim/drill.js');

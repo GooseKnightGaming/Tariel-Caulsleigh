@@ -20,6 +20,7 @@ import { buy as buyGoodRaw, change as changeMoney, purseText } from '../sim/trad
 import { breakUp, fighter, round as scrapRound, aiMove, MOVES } from '../sim/combat.js';
 import { makeAudio } from './audio.js';
 import { initTouch } from './touch.js';
+import { Toasts, GOAL, MOVES as TMOVES } from '../sim/toast.js';
 import { Drill, CALLS, canEarn } from '../sim/drill.js';
 import { Round, prize, FEE as ARCH_FEE } from '../sim/archery.js';
 import { Table, RUNES, RUNE_NAMES, rank } from '../sim/threot.js';
@@ -255,6 +256,13 @@ window.addEventListener('keydown', (e) => {
     else if (e.code === 'Enter' || e.code === 'Space') drillKey('end');
     return;
   }
+  if (toast) {
+    e.preventDefault();
+    if (/^(Digit|Numpad)[1-3]$/.test(e.code)) toastMove(TMOVES[Number(e.code.slice(-1)) - 1]);
+    else if (toast.over && (e.code === 'Enter' || e.code === 'Space' || e.code === 'Escape')) closeToast();
+    else if (e.code === 'Escape') closeToast();
+    return;
+  }
   if (scrap) {
     e.preventDefault();
     if (/^(Digit|Numpad)[1-3]$/.test(e.code)) scrapMove(MOVES[Number(e.code.slice(-1)) - 1]);
@@ -371,6 +379,7 @@ function nearby() {
     if (offerDoor) offer = 'door';
   }
   if (!offer && nearGame()) offer = 'play';
+  if (!offer && nearToast()) offer = 'toast';
   if (!offer && nearButts()) offer = 'shoot';
   offerPerson = null;
   if (!offer && town) { offerPerson = town.nearest(walker.pos[0], walker.pos[2], 2.3); if (offerPerson) offer = 'talk'; }
@@ -379,6 +388,7 @@ function nearby() {
   if (offer === 'sleep') $('prompt').innerHTML = '<kbd>E</kbd> Sleep until morning';
   else if (offer === 'talk') $('prompt').innerHTML = '<kbd>E</kbd> Talk to ' + offerPerson.p.who + ' (' + roleLabel(offerPerson.p) + ')';
   else if (offer === 'shoot') $('prompt').innerHTML = '<kbd>E</kbd> Shoot at the butts (' + FEE + ' dinar for three arrows)';
+  else if (offer === 'toast') $('prompt').innerHTML = '<kbd>E</kbd> Drink Toasts at the long table (' + STAKE + ' dinar a side)';
   else if (offer === 'play') $('prompt').innerHTML = '<kbd>E</kbd> Play Threot at the table (' + STAKE + ' dinar a hand)';
   else if (offer === 'door') $('prompt').innerHTML = '<kbd>E</kbd> ' + (OPEN.has(offerDoor.id) ? 'Close' : 'Open') + ' the door' + (offerDoor.b.kind === 'tavern' ? ' (the tavern)' : '');
 }
@@ -419,7 +429,7 @@ function gameKey(act, i) {
 function buyGood(bag, id) { const r = buyGoodRaw(purse(), bag, id); if (r.ok) { STORY.purse = r.purse; saveStory(); applyTraits(); } return r; }
 // ── the archery butts ─────────────────────────────────────────────────────────────────────────────────────────
 let range = null;
-const inGame = () => !!(gameTable || range || scrap || drill);
+const inGame = () => !!(gameTable || range || scrap || drill || toast);
 function nearButts() { const b = W.butts(); return Math.hypot(walker.pos[0] - b.mx, walker.pos[2] - b.mz) < 2.2 && Math.abs(walker.pos[1] - b.my) < 1.5; }
 function startRange() {
   if (purse() < FEE) { hint('The bowman wants ' + FEE + ' dinar for three arrows.', 3000); return; }
@@ -454,6 +464,32 @@ function chapterEnd() {
 }
 $('p-endgo').addEventListener('click', () => pause(false));
 $('p-endj').addEventListener('click', () => { drawJournal(); $('pausepage').dataset.page = 'journal'; });
+// ── Toasts: the drinking game (a DRAFT, see sim/toast.js) ────────────────────────────────────────────────────
+let toast = null;
+function nearToast() { const t = W.tavern(), [x, z] = W.toWorld(t, -2.3, 0.6); return Math.hypot(walker.pos[0] - x, walker.pos[2] - z) < 2.3 && Math.abs(walker.pos[1] - t.y) < 1.2; }
+function startToast() {
+  if (purse() < STAKE) { hint('You cannot cover the stake - ' + STAKE + ' dinar a side.', 3500); return; }
+  toast = new Toasts(character.traits, Math.random, 6 + Math.floor(Math.random() * 3)); keys.clear(); drawToast();
+}
+function drawToast() {
+  const t = toast; if (!t) return; $('scrap').classList.remove('gone');
+  $('sctitle').textContent = 'Toasts - first to ' + GOAL;
+  const side = (n, o) => '<div><b>' + n + '</b>: ' + o.pts + ' pts<div class="hp"><i style="width:' + Math.min(100, 100 * o.drunk / (o.limit + 1)) + '%"></i></div><small>drunk ' + o.drunk + '</small></div>';
+  $('schp').innerHTML = side('You', t.me) + side('Him', t.opp);
+  const end = { won: 'You win the table: +' + STAKE + ' dinar.', 'won-drunk': 'He slides off the bench. You win: +' + STAKE + ' dinar.', lost: 'He takes it. -' + STAKE + ' dinar.', 'lost-drunk': 'The room tilts and you slide off the bench. -' + STAKE + ' dinar.' };
+  $('scmsg').textContent = t.over ? t.log + ' ' + end[t.over] : t.log;
+  $('scbtns').innerHTML = t.over ? '<button data-m="end">Done</button>' : TMOVES.map((m, i) => '<button data-m="' + m + '">' + (i + 1) + ' ' + m[0].toUpperCase() + m.slice(1) + '</button>').join('');
+  $('schelp').textContent = '1 Sip (+1, drunk +1) - 2 Gulp (+2, drunk +2) - 3 Bluff (+1 unless caught). Too drunk and you lose.';
+  for (const b of document.querySelectorAll('#scbtns button')) b.onclick = () => toastMove(b.dataset.m);
+}
+function toastMove(m) {
+  const t = toast; if (!t) return;
+  if (m === 'end' || t.over) { closeToast(); return; }
+  const r = t.step(m); walker.stamina = Math.max(0, walker.stamina - 2);
+  if (r) { STORY.purse = Math.max(0, purse() + (t.won ? STAKE : -STAKE)); saveStory(); if (t.won) addNote(STORY, 'toast_won', 'Won a round of Toasts at the long table. The regulars drink slower than they talk.', clock.day); }
+  drawToast();
+}
+function closeToast() { toast = null; $('scrap').classList.add('gone'); $('schelp').textContent = '1 Strike - 2 Guard - 3 Feint. Strike beats Feint, Feint beats Guard, Guard beats Strike.'; }
 // ── the sword drill ────────────────────────────────────────────────────────────────────────────────────────────
 let drill = null, drillTimer = null;
 function startDrill() { drill = new Drill(Math.random); drill.msg = 'Watch the calls.'; keys.clear(); drawDrill(); showCall(); }
@@ -650,6 +686,7 @@ function act() {
   if (convo) return;
   if (inGame()) return;
   if (offer === 'shoot') { startRange(); return; }
+  if (offer === 'toast') { startToast(); return; }
   if (offer === 'play') { startGame(); return; }
   if (offer === 'talk' && offerPerson) { startTalk(offerPerson); return; }
   if (offer === 'door' && offerDoor) { useDoor(offerDoor); return; }
