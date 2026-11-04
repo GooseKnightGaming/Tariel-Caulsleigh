@@ -82,6 +82,7 @@
   #pausepage { background: rgba(25, 19, 13, 0.95); border-top: 3px solid var(--red); padding: 18px 26px 22px; min-width: min(360px, calc(100vw - 32px)); box-sizing: border-box; max-width: 100%; }
   #pausepage h3 { margin: 0 0 12px; font-size: 30px; letter-spacing: 0.06em; }
   #pausepage .pg { display: none; flex-direction: column; gap: 8px; }
+  #pausepage[data-page=end] .pg-end { display: flex; }
   #pausepage[data-page=main] .pg-main, #pausepage[data-page=controls] .pg-controls, #pausepage[data-page=settings] .pg-settings, #pausepage[data-page=gear] .pg-gear, #pausepage[data-page=character] .pg-character { display: flex; }
   #pausepage button { font-family: var(--serif); font-size: 20px; padding: 7px 14px; background: rgba(255, 255, 255, 0.06); color: var(--ink); border: 1px solid rgba(224, 185, 138, 0.4); cursor: pointer; text-align: left; }
   #pausepage button:hover { background: var(--red); }
@@ -168,6 +169,14 @@
     <button id="p-controls">Controls</button>
     <button id="p-settings">Settings</button>
     <button id="p-restart">Start again from the hill</button>
+  </div>
+  <div class="pg pg-end">
+    <h3>Chapter One</h3>
+    <p><i>The Trenite at Stanlech</i></p>
+    <p id="endsum"></p>
+    <p>To be continued. (This is where the build ends for now - the rest of Chapter One is still being written.)</p>
+    <button id="p-endgo">Keep exploring</button>
+    <button id="p-endj">Read the journal</button>
   </div>
   <div class="pg pg-journal">
     <h3>Journal</h3>

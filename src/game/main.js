@@ -445,6 +445,15 @@ function rangeLoose() {
   if (r.done) { const pr = prize(r.total); if (pr) { STORY.purse = purse() + pr; saveStory(); } }
   drawRange({ x: a.x, y: a.y });
 }
+// ── the end of what exists of Chapter One: a placeholder card, shown once, on reaching Shappel after the Trenite ──
+function chapterEnd() {
+  STORY.flags.ch1_end = true; saveStory(); pause(true);
+  const n = STORY.notes.length;
+  $('pausepage').dataset.page = 'end';
+  $('endsum').textContent = 'Three nights in Stanlech. ' + n + ' thing' + (n === 1 ? '' : 's') + ' written in your journal. Purse: ' + purseText({ dinar: purse(), librar: librar() }) + '. The road north is ahead of you, and so is he.';
+}
+$('p-endgo').addEventListener('click', () => pause(false));
+$('p-endj').addEventListener('click', () => { drawJournal(); $('pausepage').dataset.page = 'journal'; });
 // ── the sword drill ────────────────────────────────────────────────────────────────────────────────────────────
 let drill = null, drillTimer = null;
 function startDrill() { drill = new Drill(Math.random); drill.msg = 'Watch the calls.'; keys.clear(); drawDrill(); showCall(); }
@@ -834,6 +843,7 @@ app.on('update', (dt) => {
     if (place !== lastPlace && mode === 'free') {
       if (lastPlace) banner(place, place === 'Stanlech' ? 'A town on two banks of the Yolo' : '');
       lastPlace = place;
+      if (place === "Shappel-ont'-Laik" && nights >= 3 && !STORY.flags.ch1_end) chapterEnd();
     }
     if (!lastPlace) lastPlace = place;
     $('place').textContent = place;
