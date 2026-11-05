@@ -38,3 +38,12 @@ jump · **Q** Tariel / Thiah · **E** use · **I** gear · **K** character · **
 Building: `npm install`, `npm test`, `node build.mjs` (writes `index.html` and `game.js` here, from `src/`).
 
 **Tariel and Thiah (T0.2):** the playable woman - Tariel Caulsleigh and her other self Thiah Kirðotr - and the townsfolk are now drawn entirely in code (`src/game/anatomy.js`, `figure.js`), the two main looks built from Rhys's HeroForge reference. Caulsleigh, Siofel and the rider still use the Quaternius bodies.
+
+**What you can do in Stanlech now (T0.3-T0.6, all draft content for Rhys to rewrite):**
+- **Talk** (E beside someone): fourteen named people, answers by who she is (Tariel or Thiah) and by the night; a **journal** (J) that collects what she learns and groups it into threads.
+- **Sleep** at the tavern as Thiah: three nights make the Trenite; each morning brings news; on the third night the lamps gutter. Reaching Shappel-ont'-Laik after the third night shows a placeholder end card.
+- **Investigate:** the river-lane house with the open door and Cob's goat pen (from the second morning; Wits finds more).
+- **Games and trials:** Threot (dice) at the tavern's round table; **Toasts** (a draft drinking game) at the long table; the archery butts at the market; a friendly **fistfight** with villagers; a **sword drill** with the guards (one trait point a day, Tariel only); F steps between the first-night brawl.
+- **Money:** one purse in dinar plus librar; buy food and goods from stalls and the keeper; the money-changer swaps librar and dinar; food in the bag (I) restores stamina.
+- **Phones:** on-screen stick, look-drag and buttons; light graphics by default; the game saves as you play (Continue on the title screen); N turns the sound (made in code) on or off.
+
