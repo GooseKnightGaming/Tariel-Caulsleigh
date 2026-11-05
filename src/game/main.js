@@ -238,7 +238,13 @@ window.addEventListener('mousemove', (e) => {
   cam.yaw -= e.movementX * 0.0032 * SETTINGS.sens;
   cam.pitch = Math.max(-0.5, Math.min(1.25, cam.pitch + e.movementY * 0.0028 * SETTINGS.sens * (SETTINGS.invert ? -1 : 1)));
 });
-$('range').addEventListener('click', () => rangeLoose());
+$('range').addEventListener('click', (e) => { if (!e.target.classList.contains('leave')) rangeLoose(); });
+// a Leave button on each game panel (for touch, where there is no Esc)
+for (const id of ['game', 'range', 'drill']) {
+  const b = document.createElement('button'); b.className = 'leave'; b.textContent = 'Leave';
+  b.addEventListener('click', (e) => { e.stopPropagation(); window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape' })); });
+  $(id).append(b);
+}
 const TOUCH = initTouch((dx, dy) => {
   if (paused || convo || inGame()) return;
   cam.yaw -= dx * 0.006 * SETTINGS.sens;
