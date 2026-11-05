@@ -599,6 +599,7 @@ function closeRange() { range = null; $('range').classList.add('gone'); }
 function closeGame() { gameTable = null; $('game').classList.add('gone'); saveStory(); }
 // ── events: things that happen on their own, whether or not she is there ───────────────────────────────────────
 const audio = makeAudio();
+let stepFrom = null;
 const s0daylight = () => daylight(clock.hour);
 addEventListener('keydown', () => audio.start(), { once: false });
 addEventListener('pointerdown', () => audio.start());
@@ -875,6 +876,9 @@ app.on('update', (dt) => {
   events(dt);
   document.body.classList.toggle('busy', !!(convo || inGame()));
   rangeFrame(dt);
+  { const dx = walker.pos[0] - (stepFrom ? stepFrom[0] : walker.pos[0]), dz = walker.pos[2] - (stepFrom ? stepFrom[1] : walker.pos[2]);
+    if (!stepFrom || Math.hypot(dx, dz) > 6) stepFrom = [walker.pos[0], walker.pos[2]];                // (teleports reset it)
+    else if (walker.onGround && Math.hypot(dx, dz) > (walker.speed > 5 ? 2.0 : 1.4)) { audio.step(); stepFrom = [walker.pos[0], walker.pos[2]]; } }
   { const inside = inTavern(walker.pos[0], walker.pos[2]); const hr = clock.hour; audio.update(dt, { inside, night: Math.min(1, Math.max(0, 1 - s0daylight())), harper: hr >= 17.5 && hr < 22.5 && !(brawl), hush: !!shadow || !!brawl }); }
   if (mode === 'free' && !convo && !inGame()) { nearby(); elarNoticesHer(); }
   updateDoors(dt);

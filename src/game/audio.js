@@ -26,7 +26,13 @@ export function makeAudio() {
     g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(vol, when + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, when + 1.4);
     o.connect(f); o2.connect(f); f.connect(g); g.connect(master); o.start(when); o2.start(when); o.stop(when + 1.5); o2.stop(when + 1.5);
   };
-  let nextNote = 0, degree = 2;
+  let nextNote = 0, degree = 2, nextBird = 0, nextCricket = 0;
+  const chirp = (when, f0, f1, dur, vol) => {
+    const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine';
+    o.frequency.setValueAtTime(f0, when); o.frequency.exponentialRampToValueAtTime(f1, when + dur);
+    g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(vol, when + dur * 0.2); g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+    o.connect(g); g.connect(master); o.start(when); o.stop(when + dur + 0.05);
+  };
   // inTavern, night 0-1, wind 0-1, harper: is the harper playing, hush: the room has gone quiet
   A.update = (dt, st) => {
     if (!A.ok) return;
@@ -34,6 +40,16 @@ export function makeAudio() {
     const windT = (st.inside ? 0.05 : 0.14 + 0.1 * st.night) * (st.hush ? 1.6 : 1), murT = st.inside ? (st.hush ? 0.0 : 0.16) : 0;
     windG.gain.value += (windT - windG.gain.value) * k; murG.gain.value += (murT - murG.gain.value) * k;
     windF.frequency.value = 380 + 220 * Math.sin(t * 0.37) + 120 * Math.sin(t * 1.3);
+    if (!st.inside && !st.hush) {
+      if (st.night < 0.35 && t >= nextBird) {                          // a few birds by day: short bright phrases
+        const n = 1 + Math.floor(Math.random() * 3), base = 2400 + Math.random() * 1400;
+        for (let i = 0; i < n; i++) chirp(t + i * 0.13, base * (1 + 0.1 * i), base * (1.25 + 0.1 * i), 0.09, 0.02);
+        nextBird = t + 2.5 + Math.random() * 7;
+      } else if (st.night > 0.65 && t >= nextCricket) {                // crickets at night: rapid, quiet ticks
+        for (let i = 0; i < 6; i++) chirp(t + i * 0.045, 4300, 4100, 0.03, 0.012);
+        nextCricket = t + 0.5 + Math.random() * 1.2;
+      }
+    }
     if (st.inside && st.harper && !st.hush && t >= nextNote) {              // a slow wandering tune, never the same twice
       degree = Math.max(0, Math.min(13, degree + [-2, -1, -1, 0, 1, 1, 2][Math.floor(Math.random() * 7)]));
       const semis = SCALE[degree % 7] + 12 * Math.floor(degree / 7);
