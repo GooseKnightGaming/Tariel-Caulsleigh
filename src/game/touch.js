@@ -5,6 +5,7 @@ export function initTouch(look, tapped) {
   const coarse = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window;
   if (!coarse) return false;
   const key = (type, code) => window.dispatchEvent(new KeyboardEvent(type, { code, key: code, bubbles: true, cancelable: true }));
+  document.body.classList.add('touch');
   const css = document.createElement('style');
   css.textContent = `
   #touch { position: fixed; inset: 0; z-index: 4; pointer-events: none; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -15,7 +16,8 @@ export function initTouch(look, tapped) {
   #tknob i { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px; border-radius: 50%; background: #f2e4c0aa; }
   #touch button { position: absolute; pointer-events: auto; width: 58px; height: 58px; border-radius: 50%; border: 2px solid #f2e4c0aa; background: #0000007a; color: #f2e4c0; font: 700 18px Georgia, serif; touch-action: none; padding: 0; }
   #touch button:active { background: #6b2020cc; }
-  body.busy #tstick, body.busy #tlook { display: none; }
+  body.touch #help { display: none !important; }
+  body.busy #tstick, body.busy #tlook, body.busy #tb-j, body.busy #tb-r, body.busy #tb-q, body.busy #touch .row { display: none; }
   #touch .row { position: absolute; top: 110px; left: 8px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
   #touch .row button { position: static; width: 44px; height: 44px; font-size: 15px; }`;
   document.head.append(css);
