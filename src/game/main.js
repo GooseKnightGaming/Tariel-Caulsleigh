@@ -240,7 +240,7 @@ window.addEventListener('mousemove', (e) => {
 });
 $('range').addEventListener('click', (e) => { if (!e.target.classList.contains('leave')) rangeLoose(); });
 // a Leave button on each game panel (for touch, where there is no Esc)
-for (const id of ['game', 'range', 'drill']) {
+for (const id of ['game', 'range', 'drill', 'scrap']) {
   const b = document.createElement('button'); b.className = 'leave'; b.textContent = 'Leave';
   b.addEventListener('click', (e) => { e.stopPropagation(); window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape' })); });
   $(id).append(b);
@@ -266,13 +266,14 @@ window.addEventListener('keydown', (e) => {
     e.preventDefault();
     if (/^(Digit|Numpad)[1-3]$/.test(e.code)) toastMove(TMOVES[Number(e.code.slice(-1)) - 1]);
     else if (toast.over && (e.code === 'Enter' || e.code === 'Space' || e.code === 'Escape')) closeToast();
-    else if (e.code === 'Escape') closeToast();
+    else if (e.code === 'Escape') { if (!toast.over) { STORY.purse = Math.max(0, purse() - STAKE); saveStory(); hint('You leave the bench early: -' + STAKE + ' dinar.', 3000); } closeToast(); }
     return;
   }
   if (scrap) {
     e.preventDefault();
     if (/^(Digit|Numpad)[1-3]$/.test(e.code)) scrapMove(MOVES[Number(e.code.slice(-1)) - 1]);
     else if (scrap.done && (e.code === 'Enter' || e.code === 'Space' || e.code === 'Escape')) closeScrap();
+    else if (e.code === 'Escape') { STORY.purse = Math.max(0, purse() - 2); saveStory(); hint('You step out of the scrap early: -2 dinar.', 3000); closeScrap(); }
     return;
   }
   if (range) {
