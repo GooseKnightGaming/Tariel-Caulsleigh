@@ -281,7 +281,7 @@ window.addEventListener('keydown', (e) => {
     e.preventDefault();
     if (/^(Digit|Numpad)[1-3]$/.test(e.code)) scrapMove(MOVES[Number(e.code.slice(-1)) - 1]);
     else if (scrap.done && (e.code === 'Enter' || e.code === 'Space' || e.code === 'Escape')) closeScrap();
-    else if (e.code === 'Escape') { STORY.purse = Math.max(0, purse() - 2); saveStory(); hint('You step out of the scrap early: -2 dinar.', 3000); closeScrap(); }
+    else if (e.code === 'Escape' && !scrap.duel) { STORY.purse = Math.max(0, purse() - 2); saveStory(); hint('You step out of the scrap early: -2 dinar.', 3000); closeScrap(); }
     return;
   }
   if (range) {
@@ -393,6 +393,7 @@ function nearby() {
     }
     if (offerDoor) offer = 'door';
   }
+  if (nearDuel()) offer = 'duel';
   if (!offer && nearGame()) offer = 'play';
   if (!offer && nearToast()) offer = 'toast';
   if (!offer && nearClue()) offer = 'search';
@@ -405,6 +406,7 @@ function nearby() {
   if (offer === 'sleep') $('prompt').innerHTML = '<kbd>E</kbd> Sleep until morning';
   else if (offer === 'talk') $('prompt').innerHTML = '<kbd>E</kbd> Talk to ' + offerPerson.p.who + ' (' + roleLabel(offerPerson.p) + ')';
   else if (offer === 'shoot') $('prompt').innerHTML = '<kbd>E</kbd> Shoot at the butts (' + FEE + ' dinar for three arrows)';
+  else if (offer === 'duel') $('prompt').innerHTML = '<kbd>E</kbd> Face ' + duelGuard.p.who + ' on the bridge';
   else if (offer === 'pen') $('prompt').innerHTML = '<kbd>E</kbd> Look at the goat pen';
   else if (offer === 'search') $('prompt').innerHTML = '<kbd>E</kbd> Look at the house with the open door';
   else if (offer === 'toast') $('prompt').innerHTML = '<kbd>E</kbd> Drink Toasts at the long table (' + STAKE + ' dinar a side)';
@@ -602,16 +604,36 @@ function drillKey(i) {
   drawDrill();
 }
 function closeDrill() { clearTimeout(drillTimer); drill = null; $('drill').classList.add('gone'); }
+// ── the third night's duel on the bridge: someone she knows, briefly not himself ─────────────────────────────────
+let duelGuard = null;
+function duelEvent(h) {
+  if (duelGuard && !scrap && (h > 23.8 || h < 22 || clock.day !== 3)) { town.release(duelGuard); duelGuard = null; }   // she did not come: it passes
+  if (duelGuard || clock.day !== 3 || h < 22.3 || h > 23.7 || STORY.flags.duel_done || sleeping) return;
+  const b = W.PLACES.bridge; if (Math.hypot(walker.pos[0] - b[0], walker.pos[2] - b[1]) > 28) return;
+  const g = town.people.find((q) => q.p.role === 'guard'); if (!g) return;
+  duelGuard = g; town.hold(g, 'brawl', walker.pos);
+  const tx = b[0], tz = b[1]; if (walkable(tx, tz)) g.fig.place(tx, tz);
+  hint(g.p.who + ' stands in the middle of the bridge with a sword out, and the eyes are wrong: fixed on you, and not on you. Go to them.', 9000);
+}
+function nearDuel() { return duelGuard && Math.hypot(duelGuard.fig.pos[0] - walker.pos[0], duelGuard.fig.pos[2] - walker.pos[2]) < 3.4; }
+function endDuel(won) {
+  const g = duelGuard; STORY.flags.duel_done = true; STORY.duelWon = !!won;
+  const n = g.p.who.split(' ')[0];
+  scrap.log = won ? 'Your blade rings on theirs; the sword spins away across the boards. ' + n + ' blinks, and is themself again, remembering nothing.' : n + ' drives you back against the rail. You are done. Then, all at once, something lets go. ' + n + ' staggers, sword hanging, and blinks, remembering nothing.';
+  addNote(STORY, 'duel', g.p.who + ' was standing on the bridge with a sword out and wrong eyes, as if something else was looking through them. ' + (won ? 'I put the blade out of their hand' : 'I lost the duel, and it did not matter: whatever had them let go all at once, like a hand opening') + ', and they knew nothing of it after. Whatever did that can reach someone I know, in a night, and leave nothing behind.', clock.day);
+  walker.stamina = Math.max(0, walker.stamina - 25); saveStory();
+  town.release(g); duelGuard = null;
+}
 // ── a fistfight ───────────────────────────────────────────────────────────────────────────────────────────────
 let scrap = null;
-function startScrap(name) {
-  const you = fighter('you', character.traits), him = fighter(name, { strength: 1 + (name.length % 2), agility: 1, endurance: 1 + (name.length % 3) });
+function startScrap(name, duel) {
+  const you = fighter('you', character.traits), him = duel ? fighter(name, { strength: 3, agility: 2, endurance: 2 }) : fighter(name, { strength: 1 + (name.length % 2), agility: 1, endurance: 1 + (name.length % 3) });
   you.hp = Math.round(you.max * (0.5 + 0.5 * walker.stamina / walker.staminaMax));      // tired, she starts hurt
-  scrap = { you, him, name, log: 'Square up. Choose your move.', done: false }; keys.clear(); drawScrap();
+  scrap = { you, him, name, duel: !!duel, log: duel ? 'Swords out. ' + name + '\'s eyes are not their own. Choose your move.' : 'Square up. Choose your move.', done: false }; keys.clear(); drawScrap();
 }
 function drawScrap() {
   const s = scrap; if (!s) return; $('scrap').classList.remove('gone');
-  $('sctitle').textContent = 'A scrap with ' + s.name;
+  $('sctitle').textContent = s.duel ? 'Sword duel on the bridge - ' + s.name : 'A scrap with ' + s.name;
   const bar = (f) => '<div class="hp"><i style="width:' + Math.max(0, 100 * f.hp / f.max) + '%"></i></div>';
   $('schp').innerHTML = '<div><b>You</b>' + bar(s.you) + '</div><div><b>' + s.name + '</b>' + bar(s.him) + '</div>';
   $('scmsg').textContent = s.log;
@@ -624,6 +646,9 @@ function scrapMove(m) {
   const r = scrapRound(s.you, s.him, m, aiMove(Math.random), Math.random);
   s.him.hp -= r.b; s.you.hp -= r.a; s.log = r.note + (r.b ? ' (-' + r.b + ' to him)' : '') + (r.a ? ' (-' + r.a + ' to you)' : '');
   walker.stamina = Math.max(0, walker.stamina - 3);
+  if (s.duel && (s.him.hp <= 0 || s.you.hp <= 0)) {
+    s.done = true; endDuel(s.him.hp <= 0); drawScrap(); return;
+  }
   if (s.him.hp <= 0 || s.you.hp <= 0) {
     s.done = true;
     if (s.him.hp <= 0) { STORY.purse = purse() + 2; s.log = s.name + ' laughs it off and pays up: +2 dinar.'; addNote(STORY, 'scrap_won', 'I won a friendly scrap in the market square against ' + s.name + '. Nobody here is as hard as the fear makes them sound.', clock.day); }
@@ -657,6 +682,7 @@ function events(dt) {
   if (!town || paused || sleeping || mode === 'title') return;
   const h = clock.hour;
   shadowEvent(dt, h);
+  duelEvent(h);
   if (!brawl && clock.day === 1 && h >= 21.3 && h < 21.9 && !STORY.flags.brawl_done) {
     // the first night: two friends at the tavern fall on each other for no reason either can give
     const pair = town.inside(inTavern).filter((s) => s.p.role === 'villager' || s.p.role === 'stall');
@@ -772,6 +798,7 @@ function act() {
   if (offer === 'toast') { startToast(); return; }
   if (offer === 'search') { searchHouse(); return; }
   if (offer === 'pen') { searchPen(); return; }
+  if (offer === 'duel') { startScrap(duelGuard.p.who, true); return; }
   if (offer === 'play') { startGame(); return; }
   if (offer === 'talk' && offerPerson) { startTalk(offerPerson); return; }
   if (offer === 'door' && offerDoor) { useDoor(offerDoor); return; }

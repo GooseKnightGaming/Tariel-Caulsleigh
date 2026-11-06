@@ -240,7 +240,7 @@ export const THREADS = [
   { title: 'The man in the grey coat', ids: ['greycoat', 'shadow_night', 'house2'], of: 'Seen at dusk, never speaking. Who is he?' },
   { title: 'The missing', ids: ['cob', 'm2', 'house', 'pen', 'pen2'], of: 'People gone, doors left open, nobody saw.' },
   { title: 'Edda Wyke', ids: ['edda', 'm3'], of: 'Dead on the Shappel road.' },
-  { title: 'The fighting', ids: ['brawl', 'brawl_seen', 'brawl_stopped', 'm1'], of: 'Friends who fight and cannot say why.' },
+  { title: 'The fighting', ids: ['brawl', 'brawl_seen', 'brawl_stopped', 'm1', 'duel'], of: 'Friends who fight and cannot say why.' },
   { title: 'Elar', ids: ['elar', 'elar2'], of: 'A quiet lodger who asks a great many questions.' },
   { title: 'Who is being taken', ids: ['m3b', 'wrestle_info'], of: 'Poor women, living alone, with no one to make a noise.' },
   { title: 'The fear', ids: ['alone', 'm2b'], of: 'Doors barred at dusk; the watch doubled.' },
