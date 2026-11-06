@@ -20,6 +20,7 @@ import { buy as buyGoodRaw, change as changeMoney, purseText } from '../sim/trad
 import { breakUp, fighter, round as scrapRound, aiMove, MOVES } from '../sim/combat.js';
 import { makeAudio } from './audio.js';
 import { initTouch } from './touch.js';
+import { Bout, TEAMS as W_TEAMS, MOVES as W_MOVES, STAKE as W_STAKE, nextTeam } from '../sim/wrestle.js';
 import { Toasts, GOAL, MOVES as TMOVES } from '../sim/toast.js';
 import { Drill, CALLS, canEarn } from '../sim/drill.js';
 import { Round, prize, FEE as ARCH_FEE } from '../sim/archery.js';
@@ -262,6 +263,13 @@ window.addEventListener('keydown', (e) => {
     else if (e.code === 'Enter' || e.code === 'Space') drillKey('end');
     return;
   }
+  if (bout) {
+    e.preventDefault();
+    if (/^(Digit|Numpad)[1-3]$/.test(e.code)) wrestleMove(W_MOVES[Number(e.code.slice(-1)) - 1]);
+    else if (bout.over && (e.code === 'Enter' || e.code === 'Space' || e.code === 'Escape')) closeWrestle();
+    else if (e.code === 'Escape') { hint('You walk off the sawdust early: the stake stays on the table.', 3000); closeWrestle(); }
+    return;
+  }
   if (toast) {
     e.preventDefault();
     if (/^(Digit|Numpad)[1-3]$/.test(e.code)) toastMove(TMOVES[Number(e.code.slice(-1)) - 1]);
@@ -440,7 +448,7 @@ function gameKey(act, i) {
 function buyGood(bag, id) { const r = buyGoodRaw(purse(), bag, id); if (r.ok) { STORY.purse = r.purse; saveStory(); applyTraits(); } return r; }
 // ── the archery butts ─────────────────────────────────────────────────────────────────────────────────────────
 let range = null;
-const inGame = () => !!(gameTable || range || scrap || drill || toast);
+const inGame = () => !!(gameTable || range || scrap || drill || toast || bout);
 function nearButts() { const b = W.butts(); return Math.hypot(walker.pos[0] - b.mx, walker.pos[2] - b.mz) < 2.2 && Math.abs(walker.pos[1] - b.my) < 1.5; }
 function startRange() {
   if (purse() < FEE) { hint('The bowman wants ' + FEE + ' dinar for three arrows.', 3000); return; }
@@ -504,6 +512,36 @@ function searchPen() {
   else line += ' (A sharper eye - Wits - might read the ground.)';
   hint(line, 11000); saveStory();
 }
+// ── oil wrestling: a tavern bet, Thiah against a team of two men (a DRAFT, see sim/wrestle.js) ──────────────────────
+let bout = null;
+function startWrestle() {
+  const team = nextTeam(STORY); if (!team) return;
+  bout = new Bout(character.traits, Math.random, team); STORY.purse = purse() - W_STAKE; saveStory(); keys.clear(); drawWrestle();
+}
+function drawWrestle() {
+  const b = bout; if (!b) return; $('scrap').classList.remove('gone');
+  $('sctitle').textContent = 'Oil wrestling - ' + b.team.name;
+  const bar = (n, o) => '<div><b>' + n + '</b><div class="hp"><i style="width:' + Math.max(0, 100 * o.bal / o.max) + '%"></i></div></div>';
+  $('schp').innerHTML = bar('You', b.you) + b.opps.map((o) => bar(o.n, o)).join('');
+  const tells = b.opps.filter((o) => o.bal > 0 && o.tell).map((o) => o.n + ' is set to ' + o.tell + '.').join(' ');
+  const end = { won: 'They are both down in the sawdust, and the room roars. You are paid: +' + (W_STAKE * 2) + ' dinar.', lost: 'Your feet go out from under you. The room groans and the lads take your stake. (-' + W_STAKE + ' already paid.)' };
+  $('scmsg').textContent = b.over ? b.log + ' ' + end[b.over] : b.log + (tells ? '  ' + tells : '');
+  $('scbtns').innerHTML = b.over ? '<button data-m="end">Done</button>' : W_MOVES.map((m, i) => '<button data-m="' + m + '">' + (i + 1) + ' ' + m[0].toUpperCase() + m.slice(1) + '</button>').join('');
+  $('schelp').textContent = 'Grip beats Slip, Slip beats Brace, Brace beats Grip. Read the men: Wits shows what they are about to do.';
+  for (const e of document.querySelectorAll('#scbtns button')) e.onclick = () => wrestleMove(e.dataset.m);
+}
+function wrestleMove(m) {
+  const b = bout; if (!b) return;
+  if (m === 'end' || b.over) { closeWrestle(); return; }
+  const r = b.step(m); walker.stamina = Math.max(0, walker.stamina - 2);
+  if (r === 'won') {
+    STORY.purse = purse() + W_STAKE * 2; STORY.wrestleWon = (STORY.wrestleWon || 0) + 1;
+    addNote(STORY, 'wrestle_' + STORY.wrestleWon, 'Oil wrestling at the tavern, alone against ' + b.team.name + ', and I stayed up the longer. ' + (STORY.wrestleWon >= 3 ? 'That is all three teams. The keeper wants a word.' : 'There are more teams to come.'), clock.day);
+  }
+  if (r) saveStory();
+  drawWrestle();
+}
+function closeWrestle() { bout = null; $('scrap').classList.add('gone'); $('schelp').textContent = '1 Strike - 2 Guard - 3 Feint. Strike beats Feint, Feint beats Guard, Guard beats Strike.'; }
 // ── Toasts: the drinking game (a DRAFT, see sim/toast.js) ────────────────────────────────────────────────────
 let toast = null;
 function nearToast() { const t = W.tavern(), [x, z] = W.toWorld(t, -2.3, 0.6); return Math.hypot(walker.pos[0] - x, walker.pos[2] - z) < 2.3 && Math.abs(walker.pos[1] - t.y) < 1.2; }
@@ -699,6 +737,10 @@ function drawConvo() {
 function talkKey(i) {
   if (!convo) return;
   if (i === 'next') convo.next(); else if (!convo.pick(i)) return;
+  if (convo.act && convo.act[0] === 'wrestle') {
+    convo.act = null;
+    if (purse() < W_STAKE) STORY.shopmsg = 'No: you cannot cover the stake.'; else { endTalk(); startWrestle(); return; }
+  }
   if (convo.act && convo.act[0] === 'drill') { convo.act = null; endTalk(); startDrill(); return; }
   if (convo.act && convo.act[0] === 'scrap') {
     const who2 = convo.act[1]; convo.act = null;

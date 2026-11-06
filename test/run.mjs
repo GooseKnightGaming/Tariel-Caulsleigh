@@ -239,6 +239,24 @@ ok(gate.out && gate.in && inTavern(...gate.in) && !inTavern(...gate.out), 'the t
   ok(r.threads.find((t) => t.title === 'Edda Wyke').got.length === 1, 'a thread counts its clues');
   const all = new Set(THREADS.flatMap((t) => t.ids)); ok(all.size === THREADS.reduce((a, t) => a + t.ids.length, 0), 'no clue is in two threads');
 }
+// oil wrestling (draft)
+{
+  const { Bout, TEAMS, MOVES, nextTeam } = await import('../src/sim/wrestle.js');
+  const { scriptFor } = await import('../src/sim/story.js'), { Convo, check } = await import('../src/sim/dialogue.js');
+  let seed = 9; const rng = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const play = (traits, ti) => { let w = 0; for (let g = 0; g < 200; g++) { const b = new Bout(traits, rng, TEAMS[ti]); let n = 0; while (!b.over && n++ < 80) b.step(MOVES[Math.floor(rng() * 3)]); if (b.over === 'won') w++; } return w; };
+  ok(TEAMS.length === 3 && TEAMS.every((t) => t.men.length === 2), 'three teams of two men');
+  ok(play({}, 0) > play({}, 2), 'later teams are harder (' + play({}, 0) + ' vs ' + play({}, 2) + ' of 200)');
+  ok(play({ strength: 5, endurance: 5, wits: 5 }, 2) > play({}, 2) + 60, 'a strong, tough, sharp woman does far better');
+  const b = new Bout({ wits: 5 }, rng, TEAMS[0]); ok(b.tellChance() > new Bout({}, rng, TEAMS[0]).tellChance(), 'Wits show more tells');
+  ok(nextTeam({}) === TEAMS[0] && nextTeam({ wrestleWon: 2 }) === TEAMS[2] && nextTeam({ wrestleWon: 3 }) === null, 'the board runs in order');
+  const keeper = makeFolk().find((p) => p.role === 'keeper'), st = { flags: {}, notes: [], told: {} };
+  for (const won of [0, 3]) { st.wrestleWon = won; const sc = scriptFor(keeper, { face: 'thiah', nights: 1, day: 2, hour: 20 }, st); ok(check(sc, 'start').bad.length === 0, 'keeper talk is whole with ' + won + ' teams beaten'); }
+  st.wrestleWon = 0; const c = new Convo(scriptFor(keeper, { face: 'thiah', nights: 1, day: 2, hour: 20 }, st), { face: 'thiah', nights: 1, day: 2, hour: 20 }, st);
+  c.pick(c.choices().findIndex((x) => /bet/.test(x.text))); c.pick(0); ok(c.act && c.act[0] === 'wrestle', 'taking the bet asks for a bout');
+  const day = new Convo(scriptFor(keeper, { face: 'thiah', nights: 1, day: 2, hour: 12 }, st), { face: 'thiah', nights: 1, day: 2, hour: 12 }, st);
+  day.pick(day.choices().findIndex((x) => /bet/.test(x.text))); ok(/daylight/.test(day.view().line), 'not in daylight');
+}
 // Toasts (draft drinking game)
 {
   const { Toasts, GOAL } = await import('../src/sim/toast.js');

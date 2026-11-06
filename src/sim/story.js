@@ -75,7 +75,7 @@ const PERSONAL = {
   'Wenna Carr': { from: 1, text: { thiah: 'Girl, I\'ve told you.', tariel: 'Unterofficer, I am not easy with how the crossers are looking over their shoulders. People are afraid and no one has told them to be.' }, note: null, ask: 'How are the crossers?' },
 };
 
-function folkScript(p, ctx) {
+function folkScript(p, ctx, state) {
   const wares = waresFor(p);
   const st = STAGE(ctx), role = TOPICS[p.role] ? p.role : 'villager', T = TOPICS[role], G = GREET[role];
   const who = p.who;
@@ -109,6 +109,17 @@ function folkScript(p, ctx) {
   if (p.role === 'villager' || p.role === 'stall') {
     menu.push({ text: 'Fancy a scrap? (2 dinar a side)', go: 't_scrap' });
     script.t_scrap = { who, line: ctx.face === 'tariel' ? 'With the Baron\'s own? ...Ha. Go on, then, my lady - no marks on the face.' : 'You? Ha. Go on, then, lass - but you pay if you lose.', choices: [{ text: 'Square up.', act: ['scrap', p.who] }, { text: 'Never mind.', go: 'start' }] };
+  }
+  if (p.role === 'keeper' && ctx.face === 'thiah') {
+    const evening = ctx.hour >= 17.5 || ctx.hour < 2;
+    const team = nextTeam(state);
+    menu.push({ text: team ? 'Is there a bet going?' : 'About that board of bets...', go: 't_bet' });
+    script.t_bet = !team
+      ? { who, line: 'Three teams, three falls, and not a man in the Cawel bank will stand up against you now. The lads have talked. Come here.', go: 't_info' }
+      : !evening
+        ? { who, line: 'Not in daylight, girl. Come after supper, when the lamps are lit and the lads have coin. Oil wrestling, two on two, bets down on the table. It is the one thing in Stanlech that is honest.', choices: menu }
+        : { who, line: team.name + ' are in tonight, and they want a third to make a team. Two against two is the rule, lass. They say a team of one is no team at all. ' + BOUT_STAKE + ' dinar down, and the house doubles it if you stay up the longer. No clothes, no weapons. Hand and foot. Well?', choices: [{ text: 'A team of one. I will take them both.', act: ['wrestle'] }, { text: 'Not tonight.', go: 'start' }] };
+    script.t_info = { who, line: 'A ferryman drinks here. He rows the river after dark for silver. He says a tall man in a grey coat has been asking, quietly, after women who live alone and take in work: washerwomen, egg-sellers, widows. Pays in old coin, the king\'s face worn smooth. Two of those women are gone. I did not tell you.', note: ['wrestle_info', 'The tavern\'s ferryman: a tall man in a grey coat has been asking after women who live alone and take in work. Pays in old coin, the king\'s face worn smooth. Two of them are gone.'], go: 'start' };
   }
   if (p.role === 'guard' && ctx.face === 'tariel') {
     menu.push({ text: 'Run the sword drill with me.', go: 't_drill' });
@@ -188,12 +199,13 @@ function changerScript(p, ctx) {
 
 // everything a person might say to her now: a script for the engine (sim/dialogue.js)
 import { GOODS, waresFor } from './trade.js';
+import { nextTeam, STAKE as BOUT_STAKE } from './wrestle.js';
 export function scriptFor(p, ctx, state) {
   if (p.role === 'elar') return elarScript(p, ctx, state);
   if (p.role === 'harper') return harperScript(p, ctx);
   if (p.role === 'trader') return traderScript(p, ctx);
   if (p.role === 'changer') return changerScript(p, ctx);
-  return folkScript(p, ctx);
+  return folkScript(p, ctx, state);
 }
 export function roleName(p) {
   return { keeper: 'innkeeper', guard: 'guard', stall: 'stallholder', villager: 'villager', elar: 'lodger', harper: 'harper', trader: 'wool trader', changer: 'money-changer' }[p.role] || 'villager';
@@ -230,7 +242,7 @@ export const THREADS = [
   { title: 'Edda Wyke', ids: ['edda', 'm3'], of: 'Dead on the Shappel road.' },
   { title: 'The fighting', ids: ['brawl', 'brawl_seen', 'brawl_stopped', 'm1'], of: 'Friends who fight and cannot say why.' },
   { title: 'Elar', ids: ['elar', 'elar2'], of: 'A quiet lodger who asks a great many questions.' },
-  { title: 'Who is being taken', ids: ['m3b'], of: 'Poor women, living alone, with no one to make a noise.' },
+  { title: 'Who is being taken', ids: ['m3b', 'wrestle_info'], of: 'Poor women, living alone, with no one to make a noise.' },
   { title: 'The fear', ids: ['alone', 'm2b'], of: 'Doors barred at dusk; the watch doubled.' },
 ];
 export function threads(state) {
