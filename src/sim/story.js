@@ -212,13 +212,14 @@ export function morning(nights, state) {
   if (nights === 2) return {
     title: 'Morning', sub: 'Night two of the Trenite is behind you',
     objective: 'Day Three of the Trenite: something is wrong in Stanlech. Learn what you can before tonight.',
-    notes: [told('m2', 'Morning, day three: a door on the river lane was found open and the house behind it empty. Nobody saw anyone come or go.'),
+    notes: [told('m2', 'Morning, day three: a door on the river lane was found open and the house behind it empty. A widow lived there, who took in washing and kept to herself. Nobody saw anyone come or go.'),
             told('m2b', 'The guards have doubled the watch at the gate. They will not say what they are watching for.')],
     line: 'The market opens late. Two stalls do not open at all.' };
   return {
     title: 'The Trenite is done', sub: 'Three nights in Stanlech',
-    objective: 'The Trenite is complete. Whatever is in Stanlech, it is not finished with it - and it is going north. (Chapter One goes on in later builds.)',
-    notes: [told('m3', 'Morning, day four: the third night is over. A rider came in at dawn from the north with news the keeper will not repeat to me, and a woman in Shappel-ont\'-Laik is dead. Whoever it is, he is ahead of us on the road.')],
+    objective: 'The Trenite is complete. Someone is choosing poor women nobody will miss - and he is going north. (Chapter One goes on in later builds.)',
+    notes: [told('m3', 'Morning, day four: the third night is over. A rider came in at dawn from the north with news the keeper will not repeat to me, and a woman in Shappel-ont\'-Laik is dead. Whoever it is, he is ahead of us on the road.'),
+            told('m3b', 'Edda Wyke sold eggs at the market. The widow on the river lane took in washing. Neither had kin with the standing to make a noise. Every one of them was poor, a woman, and nobody a lord would count. I do not think that is chance, and nobody here is saying it aloud. Someone is choosing them.')],
     line: 'You have kept your three nights. Stanlech looks the same as it did, and it is not.' };
 }
 
@@ -229,6 +230,7 @@ export const THREADS = [
   { title: 'Edda Wyke', ids: ['edda', 'm3'], of: 'Dead on the Shappel road.' },
   { title: 'The fighting', ids: ['brawl', 'brawl_seen', 'brawl_stopped', 'm1'], of: 'Friends who fight and cannot say why.' },
   { title: 'Elar', ids: ['elar', 'elar2'], of: 'A quiet lodger who asks a great many questions.' },
+  { title: 'Who is being taken', ids: ['m3b'], of: 'Poor women, living alone, with no one to make a noise.' },
   { title: 'The fear', ids: ['alone', 'm2b'], of: 'Doors barred at dusk; the watch doubled.' },
 ];
 export function threads(state) {

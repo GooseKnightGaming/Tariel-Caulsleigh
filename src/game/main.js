@@ -471,7 +471,7 @@ function chapterEnd() {
   STORY.flags.ch1_end = true; saveStory(); pause(true);
   const n = STORY.notes.length;
   $('pausepage').dataset.page = 'end';
-  $('endsum').textContent = 'Three nights in Stanlech. ' + n + ' thing' + (n === 1 ? '' : 's') + ' written in your journal. Purse: ' + purseText({ dinar: purse(), librar: librar() }) + '. The road north is ahead of you, and so is he.';
+  $('endsum').textContent = 'Three nights in Stanlech. ' + n + ' thing' + (n === 1 ? '' : 's') + ' written in your journal. Purse: ' + purseText({ dinar: purse(), librar: librar() }) + '. Edda Wyke the egg-seller, the widow on the river lane: both poor, both alone, none of them anyone a lord would count. Someone is choosing them, and he is ahead of you on the road north.';
 }
 $('p-endgo').addEventListener('click', () => pause(false));
 $('p-endj').addEventListener('click', () => { drawJournal(); $('pausepage').dataset.page = 'journal'; });
@@ -963,7 +963,7 @@ function resumeGame(sv) {
     walker.pos = sv.pos.slice(); if (typeof sv.yaw === 'number') walker.yaw = sv.yaw;
     if (sv.who && sv.who !== who) become(sv.who);
     if (town) town.snap(clock.hour, Math.min(2, nights));
-    setObjective(nights >= 3 ? 'The Trenite is complete. (Chapter One goes on in later builds.)' : 'Night ' + NIGHT[nights] + ' of the Trenite: Stanlech is yours to learn. Sleep at the tavern again tonight.');
+    setObjective(nights >= 3 ? 'The Trenite is complete. Someone is choosing poor women nobody will miss. (Chapter One goes on in later builds.)' : 'Night ' + NIGHT[nights] + ' of the Trenite: Stanlech is yours to learn. Sleep at the tavern again tonight.');
     arrived = true; hint('Back in Stanlech.', 3000);
   }, 200);
 }
