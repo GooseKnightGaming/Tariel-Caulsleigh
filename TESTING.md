@@ -25,6 +25,9 @@ Please note what *feels* wrong: speed, sizes, volume, anything confusing. Tick o
 - [ ] **Fistfight** (talk to a villager or stallholder): odds fair? Leave mid-game costs 2 dinar.
 - [ ] **Sword drill** (as Tariel, talk to a guard): is the call speed readable? One trait point a day (K).
 - [ ] **Brawl** (first night around 21:18-21:57): press F near the two men.
+- [ ] **Oil wrestling** (as Thiah, evening, ask the keeper "Is there a bet going?"): Grip/Brace/Slip against two men; do the tells (shown only with Wits) feel fair? Three wins -> the keeper's ferryman information. Odds are draft.
+- [ ] **Bridge duel** (third night, 22:20-23:40, near the bridge): a guard stands in the middle with a sword out. E to face them. Does it trigger? Does it resolve either way, and does the guard go back to normal?
+- [ ] **The ending's clues:** journal thread "Who is being taken" (needs the third morning note; the ferryman's tip adds to it).
 
 ## The three nights
 - [ ] Sleep at the tavern as Thiah, night 1 -> morning news. Again for night 2 (house with the open door and Cob's pen become searchable) and night 3 (lamps gutter if you're in the tavern around 21:36-22:12).
