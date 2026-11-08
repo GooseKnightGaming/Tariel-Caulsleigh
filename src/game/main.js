@@ -682,6 +682,7 @@ function events(dt) {
   if (!town || paused || sleeping || mode === 'title') return;
   const h = clock.hour;
   shadowEvent(dt, h);
+  if (!convo && nights >= 3 && STORY.flags.shappel_boy && !STORY.flags.ch1_end) chapterEnd();
   duelEvent(h);
   if (!brawl && clock.day === 1 && h >= 21.3 && h < 21.9 && !STORY.flags.brawl_done) {
     // the first night: two friends at the tavern fall on each other for no reason either can give
@@ -999,7 +1000,6 @@ app.on('update', (dt) => {
     if (place !== lastPlace && mode === 'free') {
       if (lastPlace) banner(place, place === 'Stanlech' ? 'A town on two banks of the Yolo' : '');
       lastPlace = place;
-      if (place === "Shappel-ont'-Laik" && nights >= 3 && !STORY.flags.ch1_end) chapterEnd();
     }
     if (!lastPlace) lastPlace = place;
     $('place').textContent = place;
@@ -1033,7 +1033,7 @@ function resumeGame(sv) {
     if (sv.who && sv.who !== who) become(sv.who);
     if (town) town.snap(clock.hour, Math.min(2, nights));
     setObjective(nights >= 3 ? 'The Trenite is complete. Someone is choosing poor women nobody will miss. (Chapter One goes on in later builds.)' : 'Night ' + NIGHT[nights] + ' of the Trenite: Stanlech is yours to learn. Sleep at the tavern again tonight.');
-    arrived = true; hint('Back in Stanlech.', 3000);
+    arrived = true; hint('Back where you left off.', 3000);
   }, 200);
 }
 setInterval(saveGame, 8000);

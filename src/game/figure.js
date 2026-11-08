@@ -47,6 +47,12 @@ export function lookOf(p) {
       tunic: [0.17, 0.23, 0.15], sleeve: [0.19, 0.26, 0.16], skirt: [0.17, 0.15, 0.13], coat: [0.50, 0.53, 0.20], glove: [0.26, 0.19, 0.15], trousers: [0.14, 0.15, 0.12],
       bootCol: [0.16, 0.21, 0.15], shoe: [0.60, 0.66, 0.20], tall: true, belt: [0.24, 0.22, 0.20], dress: false, puff: false, laces: false, longSleeve: true, boots: true, over: null });
   }
+  if (p.role === 'shappel') {
+    const fem = p.kind === 'mourner' || p.kind === 'cunning';
+    Object.assign(L, { female: fem, dress: fem, puff: fem, laces: fem, longSleeve: !fem, boots: !fem, style: p.kind === 'cunning' ? 'long' : p.kind === 'mourner' ? 'braid' : p.kind === 'boy' ? 'cap' : 'short', width: fem ? 0.98 : 1.0 });
+    if (p.kind === 'cunning') L.hair = [0.74, 0.74, 0.72]; if (p.kind === 'reeve') L.hair = [0.40, 0.32, 0.22];
+    L.skirt = dark(L.tunic, 0.92); L.sleeve = L.tunic;
+  }
   if (p.role === 'guard') { L.extra = 'guard'; L.style = 'helmet'; L.tunic = [0.40, 0.14, 0.12]; L.sleeve = L.tunic; L.skirt = L.tunic; L.dress = false; L.puff = false; L.laces = false; L.longSleeve = true; L.boots = true; L.over = null; }
   else if (p.role === 'keeper') { L.extra = 'apron'; L.style = 'bald'; L.hair = [0.62, 0.62, 0.60]; L.width = 1.12; L.dress = false; L.puff = false; L.laces = false; L.longSleeve = true; L.boots = true; }
   else if (p.role === 'stall') { L.extra = 'hat'; }

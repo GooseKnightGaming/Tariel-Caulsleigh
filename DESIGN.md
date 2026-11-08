@@ -168,3 +168,6 @@ English with language labels, the Yolo River's name, Shappel-ont'-Laik. Still op
 
 1. The exact **ending of Chapter One**.
 2. The **drinking game** and **oil wrestling**: names and any details.
+
+### Shappel-ont'-Laik cast (draft)
+Four stationary villagers on the green (role `shappel`: Mara Wyke the mourner, Reeve Ancel Thorn, the boy Pip Lorner, Hesta the cunning woman). Pip's account of a tall man in grey walking north in his sleep sets `shappel_boy`, which now triggers the Chapter One end card (replacing arrival at the village). Their notes join the "Who is being taken" thread. All names and lines are DRAFT for Rhys.

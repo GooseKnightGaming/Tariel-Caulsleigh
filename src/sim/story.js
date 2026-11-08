@@ -201,6 +201,7 @@ function changerScript(p, ctx) {
 import { GOODS, waresFor } from './trade.js';
 import { nextTeam, STAKE as BOUT_STAKE } from './wrestle.js';
 export function scriptFor(p, ctx, state) {
+  if (p.role === 'shappel') return shappelScript(p, ctx, state);
   if (p.role === 'elar') return elarScript(p, ctx, state);
   if (p.role === 'harper') return harperScript(p, ctx);
   if (p.role === 'trader') return traderScript(p, ctx);
@@ -208,7 +209,7 @@ export function scriptFor(p, ctx, state) {
   return folkScript(p, ctx, state);
 }
 export function roleName(p) {
-  return { keeper: 'innkeeper', guard: 'guard', stall: 'stallholder', villager: 'villager', elar: 'lodger', harper: 'harper', trader: 'wool trader', changer: 'money-changer' }[p.role] || 'villager';
+  return p.role === 'shappel' ? { mourner: 'mourner', reeve: 'reeve', boy: 'boy', cunning: 'cunning woman' }[p.kind] : { keeper: 'innkeeper', guard: 'guard', stall: 'stallholder', villager: 'villager', elar: 'lodger', harper: 'harper', trader: 'wool trader', changer: 'money-changer' }[p.role] || 'villager';
 }
 
 // ── the morning after each night: what the town learns while she sleeps (DRAFT text for Rhys to rewrite) ───────────
@@ -242,7 +243,7 @@ export const THREADS = [
   { title: 'Edda Wyke', ids: ['edda', 'm3'], of: 'Dead on the Shappel road.' },
   { title: 'The fighting', ids: ['brawl', 'brawl_seen', 'brawl_stopped', 'm1', 'duel'], of: 'Friends who fight and cannot say why.' },
   { title: 'Elar', ids: ['elar', 'elar2'], of: 'A quiet lodger who asks a great many questions.' },
-  { title: 'Who is being taken', ids: ['m3b', 'wrestle_info'], of: 'Poor women, living alone, with no one to make a noise.' },
+  { title: 'Who is being taken', ids: ['m3b', 'wrestle_info', 'mara', 'reeve_note', 'pip', 'hesta'], of: 'Poor women, living alone, with no one to make a noise.' },
   { title: 'The fear', ids: ['alone', 'm2b'], of: 'Doors barred at dusk; the watch doubled.' },
 ];
 export function threads(state) {
@@ -250,4 +251,27 @@ export function threads(state) {
   const out = THREADS.map((t) => ({ title: t.title, about: t.of, total: t.ids.length, got: t.ids.filter((i) => have.has(i)).map((i) => have.get(i)) })).filter((t) => t.got.length);
   const note = out.length >= 4 ? 'The threads cross: the grey coat, the missing, the dead woman, the fights. Whoever he is, he is moving through Stanlech, and the town is learning to be afraid of the dark.' : null;
   return { threads: out, note };
+}
+
+// ── Shappel-ont'-Laik: four people on the green (DRAFT text for Rhys to rewrite). Nothing shown, little said. ──────
+function shappelScript(p, ctx, state) {
+  const who = p.who, tar = ctx.face === 'tariel', S = {}, k = p.kind;
+  const end = (extra) => [...(extra || []), { text: 'I am sorry. Goodbye.' }];
+  if (k === 'mourner') {
+    S.start = { who, line: tar ? 'You wear the Baron\'s grey, my lady. Have you come about my sister?' : 'You are not from here. Have you come about my sister?', choices: end([{ text: 'Who was your sister?', go: 'sister' }, { text: 'I will find who did this.', go: 'vow' }]) };
+    S.sister = { who, line: 'Edda. She sold eggs at the Stanlech market and came home on Thursdays. She was found on the road, not a mile from her own door. No one will say how. No one asks, because she was no one. I am asking.', note: ['mara', 'Mara Wyke, Edda\'s sister, on the Shappel green: Edda was found on the road a mile from her own door. Nobody asked how, because she was nobody. Mara is asking.'], choices: end([{ text: 'I will find who did this.', go: 'vow' }]) };
+    S.vow = { who, line: 'Then find the boy, Pip. He was on the green before light. He saw someone go by. The reeve will tell you to leave it alone. Do not.', choices: end() };
+  } else if (k === 'reeve') {
+    S.start = { who, line: 'Reeve Ancel Thorn. A death on the road is the lord\'s business, not a stranger\'s. We will bury her and say the words. That is what Shappel does.', choices: end([{ text: 'Three women are gone, one dead. It is not a death on a road.', go: 'push' }, { text: 'Who was she?', go: 'edda' }]) };
+    S.edda = { who, line: 'Edda Wyke. Forty winters, no husband, no brothers. A good woman with nobody to kick up a noise. I will not say more.', go: 'start' };
+    S.push = { who, line: 'Three? ...Aye. I have heard of the others, and I have told the village to keep its doors barred and its mouths shut. The lord\'s reeve does not care for women of no name. I do. But I will not say so loudly.', note: ['reeve_note', 'Reeve Thorn of Shappel knows of the others and has told the village to bar its doors and keep quiet. He says the lord\'s men do not care about women of no name, and that he does, but not loudly.'], choices: end() };
+  } else if (k === 'boy') {
+    S.start = { who, line: 'I did nothing. Mam says I am not to talk about it.', choices: end([{ text: 'You saw someone, before light.', go: 'saw' }, { text: 'It is all right. You can tell me.', go: 'saw' }]) };
+    S.saw = { who, line: 'A man. Tall, in a grey coat that was too long. He walked past the green like he was walking in his sleep, and he did not look at anything. He went up the drovers\' road, north, toward the Hollin Ford. The dogs did not bark. The dogs always bark.', note: ['pip', 'Pip Lorner, a boy of Shappel, saw a tall man in a grey coat too long for him walk past the green before light, north up the drovers\' road toward the Hollin Ford. He looked at nothing. The dogs did not bark.'], set: { shappel_boy: true }, choices: end() };
+  } else {
+    S.start = { who, line: 'Old Hesta. They send for me when the doctoring does not take. Sit.', choices: end([{ text: 'A man in grey, with old coin.', go: 'coin' }, { text: 'What do you make of it?', go: 'make' }]) };
+    S.coin = { who, line: 'The king\'s face worn smooth? That is older than the Saes kings. Nobody has minted that coin in my grandmother\'s grandmother\'s time. Whoever pays with it has kept it a long, long while.', note: ['hesta', 'Hesta, the cunning woman of Shappel: coin with a worn-smooth face is older than the Saes kings, minted before her grandmother\'s grandmother\'s time. Whoever spends it has kept it a very long while.'], go: 'start' };
+    S.make = { who, line: 'I make nothing of it, girl. I have seen it before only once, in my own mother\'s mouth, a story told to frighten children into barring the door at dusk. I thought it was a story.', go: 'start' };
+  }
+  return S;
 }

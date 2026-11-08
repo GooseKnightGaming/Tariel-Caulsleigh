@@ -38,3 +38,7 @@ Please note what *feels* wrong: speed, sizes, volume, anything confusing. Tick o
 - Real-time feel of anything (animation, archery drift, drill timing).
 - Sound by ear. Phone performance. A real touch screen (I only simulated touches).
 - Whether the tavern's barrels/crates look right (I only saw the market props and the pen).
+
+## Shappel-ont'-Laik (Chapter One ending)
+- After night 3, walk to the green at Shappel (west along the river). Four people stand there at all hours: Mara (mourner), Reeve Thorn, Pip (boy), Hesta (cunning woman).
+- Talking to Pip about the man in grey sets `shappel_boy` and shows the end card. Their notes feed "Who is being taken". All text is DRAFT.

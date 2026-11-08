@@ -401,5 +401,10 @@ ok(skyAt(6.5).mist > skyAt(13).mist * 3, 'mist at dawn');
 const c = new Clock(23.9, 1); c.step(60 * 24 / 24 * 0.2 * 60 / 60); // a little past midnight
 ok(c.day === 2 && c.hour < 1, 'the clock turns the day');
 
+{ const { newStory, Convo } = await import('../src/sim/dialogue.js'), { scriptFor } = await import('../src/sim/story.js');
+  const boy = makeFolk().find((q) => q.kind === 'boy'), ctx = { face: 'tariel', nights: 3, day: 4, hour: 9 }, st = newStory();
+  ok(boy && boy.role === 'shappel', 'Shappel has its boy');
+  const c = new Convo(scriptFor(boy, ctx, st), ctx, st, 'start'); c.pick(0); c.pick(0);
+  ok(st.flags.shappel_boy === true && st.notes.some((n) => n.id === 'pip'), 'the boy\'s tale sets the flag that ends Chapter One, and is journaled'); }
 console.log(pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

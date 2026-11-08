@@ -178,7 +178,8 @@ function tavernSpots() {
 export function tavernId() { return W.buildings().indexOf(W.tavern()); }
 
 const TINTS = [[0.55, 0.42, 0.30], [0.35, 0.45, 0.32], [0.50, 0.30, 0.28], [0.30, 0.35, 0.50], [0.55, 0.50, 0.35], [0.40, 0.33, 0.42]];
-export const ROLES = ['keeper', 'guard', 'guard', 'stall', 'stall', 'stall', 'villager', 'villager', 'villager', 'villager', 'elar', 'harper', 'trader', 'changer'];
+export const ROLES = ['keeper', 'guard', 'guard', 'stall', 'stall', 'stall', 'villager', 'villager', 'villager', 'villager', 'elar', 'harper', 'trader', 'changer', 'shappel', 'shappel', 'shappel', 'shappel'];
+export const SHAPPEL_KINDS = ['mourner', 'reeve', 'boy', 'cunning'];
 const riverBank = (pt) => (W.riverCoords(pt[0], pt[1]).n >= 0 ? 'szetter' : 'cawel');
 // the day of someone who does not drink at the tavern, and of someone who does
 const soc = (work, leave, sociable, bed) => (sociable ? [[0, 'home'], [work, 'work'], [leave, 'tavern'], [bed, 'home']] : [[0, 'home'], [work, 'work'], [leave, 'home']]);
@@ -188,6 +189,7 @@ const soc = (work, leave, sociable, bed) => (sociable ? [[0, 'home'], [work, 'wo
 // blocks say where they are from that hour until the next.
 // placeholder names and greetings (Rhys's to replace): who they are, and what they say when spoken to
 const NAMES = ['Hobb Marlow', 'Wenna Carr', 'Dunstan Pell', 'Maud Ashby', 'Garrick Toll', 'Tilda Brook', 'Osric Venn', 'Nell Harker', 'Aldous Fenn', 'Bertha Lisle', 'Elar', 'Ysolde Marr', 'Brannoc Hale', 'Jorrit Vael'];
+NAMES.push('Mara Wyke', 'Ancel Thorn', 'Pip Lorner', 'Hesta');
 // what person p says first to someone who speaks to them (the rest of the talk is in story.js)
 export function greeting(p, hour, n) {
   const sc = scriptFor(p, { face: ['thiah', 'tariel'][(n || 0) % 2], nights: Math.min(3, Math.floor((n || 0) / 2)), day: 1, hour }, { flags: {}, notes: [] });
@@ -228,6 +230,16 @@ export function makeFolk() {
       p.name = 'Money-changer'; p.pose = 'arms'; p.height = 1.70; p.tint = [0.28, 0.32, 0.48];
       const m = doorMouth(post.id), spot = nearestFree(m[0] - 1.8, m[1], 3) || m;
       p.work = [{ spot, face: bridge }]; p.blocks = [[0, 'home'], [7, 'work'], [18.5, 'home']];
+    } else if (role === 'shappel') {                                       // the people of Shappel-ont'-Laik: always on their green
+      const kind = SHAPPEL_KINDS[i - 14] || 'mourner', sp = W.PLACES.shappel;
+      const hs = bs.map((b, id) => ({ b, id })).filter(({ b }) => b.kind === 'house' && Math.hypot(b.x - sp[0], b.z - sp[1]) < 80);
+      p.kind = kind; p.home = hs[(i - 14) % hs.length].id; p.mouth = doorMouth(p.home); p.bank = 'cawel';
+      p.name = { mourner: 'Mourner', reeve: 'Reeve', boy: 'Boy', cunning: 'Cunning woman' }[kind];
+      p.pose = kind === 'reeve' ? 'arms' : kind === 'boy' ? 'idle' : 'talk';
+      p.height = { mourner: 1.60, reeve: 1.76, boy: 1.30, cunning: 1.52 }[kind]; p.tint = { mourner: [0.28, 0.28, 0.32], reeve: [0.40, 0.36, 0.28], boy: [0.48, 0.40, 0.30], cunning: [0.30, 0.22, 0.34] }[kind];
+      const off = [[-3.2, 2.0], [3.0, -1.5], [0.6, 4.2], [-1.0, -3.4]][i - 14] || [0, 0];
+      const spot = nearestFree(sp[0] + off[0], sp[1] + off[1], 4) || p.mouth;
+      p.work = [{ spot, face: [sp[0], sp[1]] }]; p.blocks = [[0, 'work']];
     } else if (role === 'guard') {
       const post = posts[(i - 1) % posts.length]; p.name = 'Guard'; p.pose = 'idle';
       p.tint = post.b.style === 'szetter' ? [0.34, 0.38, 0.46] : [0.26, 0.40, 0.28];
